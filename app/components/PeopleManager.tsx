@@ -7,6 +7,7 @@ interface Porteiro {
   name: string;
   canWorkTuesday: boolean;
   canWorkSaturday: boolean;
+  serviceCount: number;
 }
 
 interface PeopleManagerProps {
@@ -28,7 +29,8 @@ export default function PeopleManager({ onPeopleChange }: PeopleManagerProps) {
       setPeople([...people, {
         name: newPerson.trim(),
         canWorkTuesday,
-        canWorkSaturday
+        canWorkSaturday,
+        serviceCount: 0
       }]);
       setNewPerson('');
       setCanWorkTuesday(true);
@@ -116,6 +118,9 @@ export default function PeopleManager({ onPeopleChange }: PeopleManagerProps) {
                 />
                 <span className="text-sm">Sábado</span>
               </div>
+              <span className="text-sm text-gray-600">
+                Serviços: {person.serviceCount}
+              </span>
             </div>
             <button
               onClick={() => removePerson(index)}
