@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { FaPlus, FaTrash } from 'react-icons/fa';
-
-interface Porteiro {
-  name: string;
-  canWorkTuesday: boolean;
-  canWorkSaturday: boolean;
-  serviceCount: number;
-}
+import { Porteiro, addPorteiro, getPorteiros, updatePorteiro, deletePorteiro } from '../services/porteiroService';
 
 interface PeopleManagerProps {
   onPeopleChange: (people: Porteiro[]) => void;
@@ -19,38 +13,75 @@ export default function PeopleManager({ onPeopleChange }: PeopleManagerProps) {
   const [newPerson, setNewPerson] = useState('');
   const [canWorkTuesday, setCanWorkTuesday] = useState(true);
   const [canWorkSaturday, setCanWorkSaturday] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadPorteiros();
+  }, []);
 
   useEffect(() => {
     onPeopleChange(people);
   }, [people, onPeopleChange]);
 
-  const addPerson = () => {
-    if (newPerson.trim()) {
-      setPeople([...people, {
-        name: newPerson.trim(),
-        canWorkTuesday,
-        canWorkSaturday,
-        serviceCount: 0
-      }]);
-      setNewPerson('');
-      setCanWorkTuesday(true);
-      setCanWorkSaturday(true);
+  const loadPorteiros = async () => {
+    try {
+      const porteiros = await getPorteiros();
+      setPeople(porteiros);
+    } catch (error) {
+      console.error('Erro ao carregar porteiros:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const removePerson = (index: number) => {
-    setPeople(people.filter((_, i) => i !== index));
+  const addPerson = async () => {
+    if (newPerson.trim()) {
+      try {
+        const newPorteiro: Omit<Porteiro, 'id'> = {
+          name: newPerson.trim(),
+          canWorkTuesday,
+          canWorkSaturday,
+          serviceCount: 0
+        };
+
+        await addPorteiro(newPorteiro);
+        await loadPorteiros(); // Recarrega os dados do Firebase
+
+        setNewPerson('');
+        setCanWorkTuesday(true);
+        setCanWorkSaturday(true);
+      } catch (error) {
+        console.error('Erro ao adicionar porteiro:', error);
+      }
+    }
   };
 
-  const toggleAvailability = (index: number, day: 'tuesday' | 'saturday') => {
-    const updatedPeople = [...people];
-    updatedPeople[index] = {
-      ...updatedPeople[index],
-      [day === 'tuesday' ? 'canWorkTuesday' : 'canWorkSaturday']:
-        !updatedPeople[index][day === 'tuesday' ? 'canWorkTuesday' : 'canWorkSaturday']
-    };
-    setPeople(updatedPeople);
+  const removePerson = async (id: string) => {
+    try {
+      await deletePorteiro(id);
+      await loadPorteiros(); // Recarrega os dados do Firebase
+    } catch (error) {
+      console.error('Erro ao remover porteiro:', error);
+    }
   };
+
+  const toggleAvailability = async (porteiro: Porteiro, day: 'tuesday' | 'saturday') => {
+    if (!porteiro.id) return;
+
+    try {
+      const field = day === 'tuesday' ? 'canWorkTuesday' : 'canWorkSaturday';
+      await updatePorteiro(porteiro.id, {
+        [field]: !porteiro[field]
+      });
+      await loadPorteiros(); // Recarrega os dados do Firebase
+    } catch (error) {
+      console.error('Erro ao atualizar disponibilidade:', error);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center">Carregando porteiros...</div>;
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-4">
@@ -96,15 +127,15 @@ export default function PeopleManager({ onPeopleChange }: PeopleManagerProps) {
       </div>
 
       <div className="space-y-2">
-        {people.map((person, index) => (
-          <div key={index} className="flex items-center gap-4 p-2 border rounded">
+        {people.map((person) => (
+          <div key={person.id} className="flex items-center gap-4 p-2 border rounded">
             <span className="flex-1">{person.name}</span>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={person.canWorkTuesday}
-                  onChange={() => toggleAvailability(index, 'tuesday')}
+                  onChange={() => toggleAvailability(person, 'tuesday')}
                   className="h-4 w-4"
                 />
                 <span className="text-sm">Terça</span>
@@ -113,7 +144,7 @@ export default function PeopleManager({ onPeopleChange }: PeopleManagerProps) {
                 <input
                   type="checkbox"
                   checked={person.canWorkSaturday}
-                  onChange={() => toggleAvailability(index, 'saturday')}
+                  onChange={() => toggleAvailability(person, 'saturday')}
                   className="h-4 w-4"
                 />
                 <span className="text-sm">Sábado</span>
@@ -123,7 +154,7 @@ export default function PeopleManager({ onPeopleChange }: PeopleManagerProps) {
               </span>
             </div>
             <button
-              onClick={() => removePerson(index)}
+              onClick={() => person.id && removePerson(person.id)}
               className="text-red-500 hover:text-red-700"
             >
               <FaTrash />
