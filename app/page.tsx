@@ -6,12 +6,18 @@ import PeopleManager from './components/PeopleManager';
 import SchedulePDF from './components/SchedulePDF';
 import { generateSchedule } from './utils/scheduleGenerator';
 
+interface Porteiro {
+  name: string;
+  canWorkTuesday: boolean;
+  canWorkSaturday: boolean;
+}
+
 export default function Home() {
-  const [people, setPeople] = useState<string[]>([]);
+  const [people, setPeople] = useState<Porteiro[]>([]);
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(new Date().getFullYear());
 
-  const handlePeopleChange = (newPeople: string[]) => {
+  const handlePeopleChange = (newPeople: Porteiro[]) => {
     setPeople(newPeople);
   };
 

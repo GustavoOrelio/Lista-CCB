@@ -1,10 +1,16 @@
+interface Porteiro {
+  name: string;
+  canWorkTuesday: boolean;
+  canWorkSaturday: boolean;
+}
+
 interface ScheduleEntry {
   day: number;
   people: string[];
 }
 
 export function generateSchedule(
-  people: string[],
+  people: Porteiro[],
   month: number,
   year: number
 ): ScheduleEntry[] {
@@ -20,10 +26,20 @@ export function generateSchedule(
 
     // 2 = Tuesday, 6 = Saturday
     if (dayOfWeek === 2 || dayOfWeek === 6) {
+      // Filter people based on day availability
+      const availablePeople = people.filter((p) =>
+        dayOfWeek === 2 ? p.canWorkTuesday : p.canWorkSaturday
+      );
+
+      if (availablePeople.length < 2) {
+        // Skip if we don't have enough available people
+        continue;
+      }
+
       // Select 2 people for each service
       const peopleForDay = [
-        people[currentPersonIndex % people.length],
-        people[(currentPersonIndex + 1) % people.length],
+        availablePeople[currentPersonIndex % availablePeople.length].name,
+        availablePeople[(currentPersonIndex + 1) % availablePeople.length].name,
       ];
 
       entries.push({
