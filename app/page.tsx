@@ -2,22 +2,24 @@
 
 import { useState } from 'react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import ScheduleForm from './components/ScheduleForm';
+import PeopleManager from './components/PeopleManager';
 import SchedulePDF from './components/SchedulePDF';
-
-interface ScheduleEntry {
-  day: number;
-  people: string[];
-}
+import { generateSchedule } from './utils/scheduleGenerator';
 
 export default function Home() {
-  const [entries, setEntries] = useState<ScheduleEntry[]>([]);
-  const [month, setMonth] = useState(new Date().toLocaleString('pt-BR', { month: 'long' }));
+  const [people, setPeople] = useState<string[]>([]);
+  const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(new Date().getFullYear());
 
-  const handleEntriesChange = (newEntries: ScheduleEntry[]) => {
-    setEntries(newEntries);
+  const handlePeopleChange = (newPeople: string[]) => {
+    setPeople(newPeople);
   };
+
+  const getMonthName = (monthIndex: number) => {
+    return new Date(2000, monthIndex, 1).toLocaleString('pt-BR', { month: 'long' });
+  };
+
+  const entries = generateSchedule(people, month, year);
 
   return (
     <main className="min-h-screen p-8">
@@ -29,17 +31,14 @@ export default function Home() {
         <div className="mb-8 flex justify-center gap-4">
           <select
             value={month}
-            onChange={(e) => setMonth(e.target.value)}
+            onChange={(e) => setMonth(parseInt(e.target.value))}
             className="border p-2 rounded"
           >
-            {Array.from({ length: 12 }, (_, i) => {
-              const date = new Date(2000, i, 1);
-              return (
-                <option key={i} value={date.toLocaleString('pt-BR', { month: 'long' })}>
-                  {date.toLocaleString('pt-BR', { month: 'long' })}
-                </option>
-              );
-            })}
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i} value={i}>
+                {getMonthName(i)}
+              </option>
+            ))}
           </select>
 
           <input
@@ -50,17 +49,23 @@ export default function Home() {
           />
         </div>
 
-        <ScheduleForm onEntriesChange={handleEntriesChange} />
+        <PeopleManager onPeopleChange={handlePeopleChange} />
 
         {entries.length > 0 && (
           <div className="mt-8 text-center">
             <PDFDownloadLink
-              document={<SchedulePDF entries={entries} month={month} year={year} />}
-              fileName={`escala-porteiros-${month}-${year}.pdf`}
+              document={
+                <SchedulePDF
+                  entries={entries}
+                  month={getMonthName(month)}
+                  year={year}
+                />
+              }
+              fileName={`escala-porteiros-${getMonthName(month)}-${year}.pdf`}
               className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
             >
               {({ loading }) =>
-                loading ? 'Gerando PDF...' : 'Baixar PDF'
+                loading ? 'Gerando PDF...' : 'Baixar PDF da Escala'
               }
             </PDFDownloadLink>
           </div>
