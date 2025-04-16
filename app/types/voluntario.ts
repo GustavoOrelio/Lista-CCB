@@ -3,6 +3,8 @@ export interface Voluntario {
   nome: string;
   igrejaId: string;
   igrejaNome: string;
+  cargoId: string;
+  cargoNome: string;
   disponibilidades?: {
     domingo: boolean;
     segunda: boolean;

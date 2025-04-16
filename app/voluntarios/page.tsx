@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { Voluntario } from '../types/voluntario';
 import { Igreja } from '../types/igreja';
+import { Cargo } from '../types/cargo';
 import { voluntarioService } from '../services/voluntarioService';
 import { igrejaService } from '../services/igrejaService';
+import { cargoService } from '../services/cargoService';
 import { Button } from '@/app/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
 import { VoluntariosTable } from '../components/voluntarios/VoluntariosTable';
@@ -33,6 +35,7 @@ export default function Voluntarios() {
   const [voluntarioParaExcluir, setVoluntarioParaExcluir] = useState<string | null>(null);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [igrejas, setIgrejas] = useState<Igreja[]>([]);
+  const [cargos, setCargos] = useState<Cargo[]>([]);
   const [voluntarioEmEdicao, setVoluntarioEmEdicao] = useState<Voluntario | null>(null);
   const [novoVoluntario, setNovoVoluntario] = useState<Omit<Voluntario, 'id'> & {
     disponibilidades: NonNullable<Voluntario['disponibilidades']>;
@@ -40,6 +43,8 @@ export default function Voluntarios() {
     nome: '',
     igrejaId: '',
     igrejaNome: '',
+    cargoId: '',
+    cargoNome: '',
     disponibilidades: {
       domingo: false,
       segunda: false,
@@ -57,12 +62,14 @@ export default function Voluntarios() {
 
   const carregarDados = async () => {
     try {
-      const [dadosVoluntarios, dadosIgrejas] = await Promise.all([
+      const [dadosVoluntarios, dadosIgrejas, dadosCargos] = await Promise.all([
         voluntarioService.listar(),
-        igrejaService.listar()
+        igrejaService.listar(),
+        cargoService.listar()
       ]);
       setVoluntarios(dadosVoluntarios);
       setIgrejas(dadosIgrejas);
+      setCargos(dadosCargos);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados. Por favor, tente novamente.');
@@ -96,6 +103,8 @@ export default function Voluntarios() {
       nome: '',
       igrejaId: '',
       igrejaNome: '',
+      cargoId: '',
+      cargoNome: '',
       disponibilidades: {
         domingo: false,
         segunda: false,
@@ -130,12 +139,25 @@ export default function Voluntarios() {
     }
   };
 
+  const handleCargoChange = (cargoId: string) => {
+    const cargo = cargos.find(c => c.id === cargoId);
+    if (cargo) {
+      setNovoVoluntario(prev => ({
+        ...prev,
+        cargoId: cargo.id,
+        cargoNome: cargo.nome,
+      }));
+    }
+  };
+
   const handleEdit = (voluntario: Voluntario) => {
     setVoluntarioEmEdicao(voluntario);
     setNovoVoluntario({
       nome: voluntario.nome,
       igrejaId: voluntario.igrejaId,
       igrejaNome: voluntario.igrejaNome,
+      cargoId: voluntario.cargoId,
+      cargoNome: voluntario.cargoNome,
       disponibilidades: voluntario.disponibilidades || {
         domingo: false,
         segunda: false,
@@ -203,10 +225,12 @@ export default function Voluntarios() {
           <VoluntarioForm
             voluntario={novoVoluntario}
             igrejas={igrejas}
+            cargos={cargos}
             diasSemana={diasSemana}
             onSubmit={handleSubmit}
             onChange={setNovoVoluntario}
             onIgrejaChange={handleIgrejaChange}
+            onCargoChange={handleCargoChange}
             isEditing={!!voluntarioEmEdicao}
             onCancel={handleCloseModal}
           />

@@ -30,6 +30,7 @@ export function VoluntariosTable({
           <TableRow>
             <TableHead>Nome</TableHead>
             <TableHead>Igreja</TableHead>
+            <TableHead>Cargo</TableHead>
             <TableHead>Disponibilidade</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
@@ -39,6 +40,7 @@ export function VoluntariosTable({
             <TableRow key={voluntario.id}>
               <TableCell className="font-medium">{voluntario.nome}</TableCell>
               <TableCell>{voluntario.igrejaNome}</TableCell>
+              <TableCell>{voluntario.cargoNome}</TableCell>
               <TableCell>{formatarDisponibilidades(voluntario.disponibilidades)}</TableCell>
               <TableCell className="text-right">
                 <Button
