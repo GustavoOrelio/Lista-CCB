@@ -10,6 +10,7 @@ import {
   TruckIcon,
   BuildingOffice2Icon,
   BriefcaseIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
 
 const menuItems = [
@@ -18,6 +19,7 @@ const menuItems = [
   { name: 'Voluntários', href: '/voluntarios', icon: UserPlusIcon },
   { name: 'Cargos', href: '/cargos', icon: BriefcaseIcon },
   { name: 'Porteiros', href: '/porteiros', icon: UserGroupIcon },
+  { name: 'Escalas', href: '/escalas', icon: CalendarDaysIcon },
   { name: 'Pátio', href: '/patio', icon: TruckIcon },
   { name: 'Coleta', href: '/coleta', icon: ClipboardDocumentListIcon },
 ];
