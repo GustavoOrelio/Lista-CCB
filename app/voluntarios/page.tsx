@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Voluntario } from '../types/voluntario';
 import { Igreja } from '../types/igreja';
 import { voluntarioService } from '../services/voluntarioService';
@@ -21,6 +21,7 @@ export default function Voluntarios() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [igrejas, setIgrejas] = useState<Igreja[]>([]);
+  const [voluntarioEmEdicao, setVoluntarioEmEdicao] = useState<Voluntario | null>(null);
   const [novoVoluntario, setNovoVoluntario] = useState<Omit<Voluntario, 'id'>>({
     nome: '',
     igrejaId: '',
@@ -57,27 +58,40 @@ export default function Voluntarios() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const id = await voluntarioService.adicionar(novoVoluntario);
-      setVoluntarios(prev => [...prev, { id, ...novoVoluntario }]);
-      setNovoVoluntario({
-        nome: '',
-        igrejaId: '',
-        igrejaNome: '',
-        disponibilidades: {
-          domingo: false,
-          segunda: false,
-          terca: false,
-          quarta: false,
-          quinta: false,
-          sexta: false,
-          sabado: false,
-        },
-      });
-      setIsModalOpen(false);
+      if (voluntarioEmEdicao) {
+        await voluntarioService.atualizar(voluntarioEmEdicao.id, novoVoluntario);
+        setVoluntarios(prev => prev.map(v =>
+          v.id === voluntarioEmEdicao.id ? { ...novoVoluntario, id: voluntarioEmEdicao.id } : v
+        ));
+      } else {
+        const id = await voluntarioService.adicionar(novoVoluntario);
+        setVoluntarios(prev => [...prev, { id, ...novoVoluntario }]);
+      }
+
+      handleCloseModal();
     } catch (error) {
       console.error('Erro ao salvar voluntário:', error);
       alert('Erro ao salvar voluntário. Por favor, tente novamente.');
     }
+  };
+
+  const handleCloseModal = () => {
+    setNovoVoluntario({
+      nome: '',
+      igrejaId: '',
+      igrejaNome: '',
+      disponibilidades: {
+        domingo: false,
+        segunda: false,
+        terca: false,
+        quarta: false,
+        quinta: false,
+        sexta: false,
+        sabado: false,
+      },
+    });
+    setVoluntarioEmEdicao(null);
+    setIsModalOpen(false);
   };
 
   const handleIgrejaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -97,6 +111,37 @@ export default function Voluntarios() {
           sabado: false,
         },
       }));
+    }
+  };
+
+  const handleEdit = (voluntario: Voluntario) => {
+    setVoluntarioEmEdicao(voluntario);
+    setNovoVoluntario({
+      nome: voluntario.nome,
+      igrejaId: voluntario.igrejaId,
+      igrejaNome: voluntario.igrejaNome,
+      disponibilidades: voluntario.disponibilidades || {
+        domingo: false,
+        segunda: false,
+        terca: false,
+        quarta: false,
+        quinta: false,
+        sexta: false,
+        sabado: false,
+      },
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir este voluntário?')) {
+      try {
+        await voluntarioService.excluir(id);
+        setVoluntarios(prev => prev.filter(v => v.id !== id));
+      } catch (error) {
+        console.error('Erro ao excluir voluntário:', error);
+        alert('Erro ao excluir voluntário. Por favor, tente novamente.');
+      }
     }
   };
 
@@ -136,6 +181,9 @@ export default function Voluntarios() {
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                 Disponibilidade
               </th>
+              <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
@@ -150,22 +198,38 @@ export default function Voluntarios() {
                 <td className="px-6 py-4 text-sm text-gray-500">
                   {formatarDisponibilidades(voluntario.disponibilidades)}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    onClick={() => handleEdit(voluntario)}
+                    className="text-gray-600 hover:text-gray-900 mr-3"
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(voluntario.id)}
+                    className="text-gray-600 hover:text-red-600"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Modal de Cadastro */}
+      {/* Modal de Cadastro/Edição */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="fixed inset-0 bg-black opacity-40"></div>
           <div className="flex min-h-screen items-center justify-center p-4">
             <div className="relative bg-white rounded-lg shadow-xl p-6 w-full max-w-md z-50">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-medium text-gray-900">Adicionar Novo Voluntário</h2>
+                <h2 className="text-xl font-medium text-gray-900">
+                  {voluntarioEmEdicao ? 'Editar Voluntário' : 'Adicionar Novo Voluntário'}
+                </h2>
                 <button
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseModal}
                   className="text-gray-400 hover:text-gray-500 transition-colors"
                 >
                   <span className="sr-only">Fechar</span>
@@ -240,7 +304,7 @@ export default function Voluntarios() {
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={handleCloseModal}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                   >
                     Cancelar
@@ -249,7 +313,7 @@ export default function Voluntarios() {
                     type="submit"
                     className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 transition-colors"
                   >
-                    Salvar
+                    {voluntarioEmEdicao ? 'Salvar Alterações' : 'Salvar'}
                   </button>
                 </div>
               </form>
