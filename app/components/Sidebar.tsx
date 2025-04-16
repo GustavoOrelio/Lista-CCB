@@ -8,13 +8,15 @@ import {
   UserPlusIcon,
   ClipboardDocumentListIcon,
   TruckIcon,
-  BuildingOffice2Icon
+  BuildingOffice2Icon,
+  BriefcaseIcon,
 } from '@heroicons/react/24/outline';
 
 const menuItems = [
   { name: 'Home', href: '/', icon: HomeIcon },
   { name: 'Igrejas', href: '/igrejas', icon: BuildingOffice2Icon },
   { name: 'Voluntários', href: '/voluntarios', icon: UserPlusIcon },
+  { name: 'Cargos', href: '/cargos', icon: BriefcaseIcon },
   { name: 'Porteiros', href: '/porteiros', icon: UserGroupIcon },
   { name: 'Pátio', href: '/patio', icon: TruckIcon },
   { name: 'Coleta', href: '/coleta', icon: ClipboardDocumentListIcon },
