@@ -1,11 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { Voluntario } from '../types/voluntario';
 import { Igreja } from '../types/igreja';
 import { voluntarioService } from '../services/voluntarioService';
 import { igrejaService } from '../services/igrejaService';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { VoluntariosTable } from '../components/voluntarios/VoluntariosTable';
+import { VoluntarioForm } from '../components/voluntarios/VoluntarioForm';
+import { DeleteConfirmationDialog } from '../components/voluntarios/DeleteConfirmationDialog';
+import { toast } from 'sonner';
 
 const diasSemana = [
   { key: 'domingo', label: 'Domingo', cultoProp: 'cultoDomingo' },
@@ -15,14 +21,22 @@ const diasSemana = [
   { key: 'quinta', label: 'Quinta-feira', cultoProp: 'cultoQuinta' },
   { key: 'sexta', label: 'Sexta-feira', cultoProp: 'cultoSexta' },
   { key: 'sabado', label: 'Sábado', cultoProp: 'cultoSabado' },
-] as const;
+] as {
+  key: keyof Voluntario['disponibilidades'];
+  label: string;
+  cultoProp: keyof Igreja;
+}[];
 
 export default function Voluntarios() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [voluntarioParaExcluir, setVoluntarioParaExcluir] = useState<string | null>(null);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [igrejas, setIgrejas] = useState<Igreja[]>([]);
   const [voluntarioEmEdicao, setVoluntarioEmEdicao] = useState<Voluntario | null>(null);
-  const [novoVoluntario, setNovoVoluntario] = useState<Omit<Voluntario, 'id'>>({
+  const [novoVoluntario, setNovoVoluntario] = useState<Omit<Voluntario, 'id'> & {
+    disponibilidades: NonNullable<Voluntario['disponibilidades']>;
+  }>({
     nome: '',
     igrejaId: '',
     igrejaNome: '',
@@ -51,7 +65,7 @@ export default function Voluntarios() {
       setIgrejas(dadosIgrejas);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      alert('Erro ao carregar dados. Por favor, tente novamente.');
+      toast.error('Erro ao carregar dados. Por favor, tente novamente.');
     }
   };
 
@@ -63,15 +77,17 @@ export default function Voluntarios() {
         setVoluntarios(prev => prev.map(v =>
           v.id === voluntarioEmEdicao.id ? { ...novoVoluntario, id: voluntarioEmEdicao.id } : v
         ));
+        toast.success('Voluntário atualizado com sucesso!');
       } else {
         const id = await voluntarioService.adicionar(novoVoluntario);
         setVoluntarios(prev => [...prev, { id, ...novoVoluntario }]);
+        toast.success('Voluntário adicionado com sucesso!');
       }
 
       handleCloseModal();
     } catch (error) {
       console.error('Erro ao salvar voluntário:', error);
-      alert('Erro ao salvar voluntário. Por favor, tente novamente.');
+      toast.error('Erro ao salvar voluntário. Por favor, tente novamente.');
     }
   };
 
@@ -94,8 +110,8 @@ export default function Voluntarios() {
     setIsModalOpen(false);
   };
 
-  const handleIgrejaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const igreja = igrejas.find(i => i.id === e.target.value);
+  const handleIgrejaChange = (igrejaId: string) => {
+    const igreja = igrejas.find(i => i.id === igrejaId);
     if (igreja) {
       setNovoVoluntario(prev => ({
         ...prev,
@@ -134,14 +150,22 @@ export default function Voluntarios() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este voluntário?')) {
-      try {
-        await voluntarioService.excluir(id);
-        setVoluntarios(prev => prev.filter(v => v.id !== id));
-      } catch (error) {
-        console.error('Erro ao excluir voluntário:', error);
-        alert('Erro ao excluir voluntário. Por favor, tente novamente.');
-      }
+    setVoluntarioParaExcluir(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!voluntarioParaExcluir) return;
+
+    try {
+      await voluntarioService.excluir(voluntarioParaExcluir);
+      setVoluntarios(prev => prev.filter(v => v.id !== voluntarioParaExcluir));
+      setIsDeleteDialogOpen(false);
+      setVoluntarioParaExcluir(null);
+      toast.success('Voluntário excluído com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir voluntário:', error);
+      toast.error('Erro ao excluir voluntário. Por favor, tente novamente.');
     }
   };
 
@@ -155,172 +179,50 @@ export default function Voluntarios() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto bg-gray-100">
+    <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-medium text-gray-900">Voluntários</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-white text-gray-700 px-4 py-2 rounded-md flex items-center hover:bg-gray-50 transition-colors border border-gray-200"
-        >
+        <h1 className="text-2xl font-semibold">Voluntários</h1>
+        <Button onClick={() => setIsModalOpen(true)}>
           <PlusIcon className="h-5 w-5 mr-2" />
           Adicionar Voluntário
-        </button>
+        </Button>
       </div>
 
-      {/* Lista de Voluntários */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead>
-            <tr>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
-                Nome
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
-                Igreja
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
-                Disponibilidade
-              </th>
-              <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
-                Ações
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {voluntarios.map((voluntario) => (
-              <tr key={voluntario.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {voluntario.nome}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {voluntario.igrejaNome}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {formatarDisponibilidades(voluntario.disponibilidades)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleEdit(voluntario)}
-                    className="text-gray-600 hover:text-gray-900 mr-3"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(voluntario.id)}
-                    className="text-gray-600 hover:text-red-600"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <VoluntariosTable
+        voluntarios={voluntarios}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        formatarDisponibilidades={formatarDisponibilidades}
+      />
 
-      {/* Modal de Cadastro/Edição */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="fixed inset-0 bg-black opacity-40"></div>
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div className="relative bg-white rounded-lg shadow-xl p-6 w-full max-w-md z-50">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-medium text-gray-900">
-                  {voluntarioEmEdicao ? 'Editar Voluntário' : 'Adicionar Novo Voluntário'}
-                </h2>
-                <button
-                  onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-gray-500 transition-colors"
-                >
-                  <span className="sr-only">Fechar</span>
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome
-                  </label>
-                  <input
-                    type="text"
-                    value={novoVoluntario.nome}
-                    onChange={(e) => setNovoVoluntario(prev => ({ ...prev, nome: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Igreja
-                  </label>
-                  <select
-                    value={novoVoluntario.igrejaId}
-                    onChange={handleIgrejaChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
-                    required
-                  >
-                    <option value="">Selecione uma igreja</option>
-                    {igrejas.map(igreja => (
-                      <option key={igreja.id} value={igreja.id}>
-                        {igreja.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {novoVoluntario.igrejaId && (
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Disponibilidade
-                    </label>
-                    {diasSemana.map(dia => {
-                      const igreja = igrejas.find(i => i.id === novoVoluntario.igrejaId);
-                      if (!igreja || !igreja[dia.cultoProp]) return null;
-
-                      return (
-                        <label key={dia.key} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={novoVoluntario?.disponibilidades?.[dia.key] ?? false}
-                            onChange={(e) => setNovoVoluntario(prev => ({
-                              ...prev,
-                              disponibilidades: {
-                                ...prev.disponibilidades,
-                                [dia.key]: e.target.checked
-                              } as Voluntario['disponibilidades']
-                            }))}
-                            className="h-4 w-4 text-gray-600 focus:ring-gray-400 border-gray-300 rounded"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">Disponível para {dia.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 transition-colors"
-                  >
-                    {voluntarioEmEdicao ? 'Salvar Alterações' : 'Salvar'}
-                  </button>
-                </div>
-              </form>
-            </div>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-medium text-gray-900">
+              {voluntarioEmEdicao ? 'Editar Voluntário' : 'Adicionar Novo Voluntário'}
+            </h2>
           </div>
-        </div>
-      )}
+
+          <VoluntarioForm
+            voluntario={novoVoluntario}
+            igrejas={igrejas}
+            diasSemana={diasSemana}
+            onSubmit={handleSubmit}
+            onChange={setNovoVoluntario}
+            onIgrejaChange={handleIgrejaChange}
+            isEditing={!!voluntarioEmEdicao}
+            onCancel={handleCloseModal}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Voluntário"
+        description="Tem certeza que deseja excluir este voluntário? Esta ação não pode ser desfeita."
+      />
     </div>
   );
 } 
