@@ -6,14 +6,15 @@ import {
   UserGroupIcon,
   HomeIcon,
   UserPlusIcon,
-  ClipboardDocumentListIcon
+  ClipboardDocumentListIcon,
+  TruckIcon
 } from '@heroicons/react/24/outline';
 
 const menuItems = [
   { name: 'Home', href: '/', icon: HomeIcon },
-  { name: 'Cadastro de Usuários', href: '/usuarios', icon: UserPlusIcon },
+  { name: 'Voluntários', href: '/voluntarios', icon: UserPlusIcon },
   { name: 'Porteiros', href: '/porteiros', icon: UserGroupIcon },
-  { name: 'Pátio', href: '/patio', icon: UserGroupIcon },
+  { name: 'Pátio', href: '/patio', icon: TruckIcon },
   { name: 'Coleta', href: '/coleta', icon: ClipboardDocumentListIcon },
 ];
 
