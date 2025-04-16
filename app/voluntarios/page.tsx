@@ -32,9 +32,7 @@ export default function Voluntarios() {
     e.preventDefault();
     try {
       const id = await voluntarioService.adicionar(novoVoluntario);
-
       setVoluntarios(prev => [...prev, { id, ...novoVoluntario }]);
-
       setNovoVoluntario({
         nome: '',
         disponibilidadeTerca: false,
@@ -48,12 +46,12 @@ export default function Voluntarios() {
   };
 
   return (
-    <div className="container mx-auto px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Voluntários</h1>
+    <div className="p-6 max-w-6xl mx-auto bg-gray-100">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-medium text-gray-900">Voluntários</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700"
+          className="bg-white text-gray-700 px-4 py-2 rounded-md flex items-center hover:bg-gray-50 transition-colors border border-gray-200"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
           Adicionar Voluntário
@@ -61,24 +59,24 @@ export default function Voluntarios() {
       </div>
 
       {/* Lista de Voluntários */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                 Nome
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                 Disponível Terça
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                 Disponível Sábado
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 bg-white">
             {voluntarios.map((voluntario) => (
-              <tr key={voluntario.id}>
+              <tr key={voluntario.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {voluntario.nome}
                 </td>
@@ -96,55 +94,66 @@ export default function Voluntarios() {
 
       {/* Modal de Cadastro */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Adicionar Novo Voluntário</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-medium text-gray-900">Adicionar Novo Voluntário</h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <span className="sr-only">Fechar</span>
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nome
                 </label>
                 <input
                   type="text"
                   value={novoVoluntario.nome}
                   onChange={(e) => setNovoVoluntario(prev => ({ ...prev, nome: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
                   required
                 />
               </div>
-              <div className="mb-4">
+              <div>
                 <label className="flex items-center">
                   <input
                     type="checkbox"
                     checked={novoVoluntario.disponibilidadeTerca}
                     onChange={(e) => setNovoVoluntario(prev => ({ ...prev, disponibilidadeTerca: e.target.checked }))}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-gray-600 focus:ring-gray-400 border-gray-300 rounded"
                   />
                   <span className="ml-2 text-sm text-gray-700">Disponível para Terça-feira</span>
                 </label>
               </div>
-              <div className="mb-6">
+              <div>
                 <label className="flex items-center">
                   <input
                     type="checkbox"
                     checked={novoVoluntario.disponibilidadeSabado}
                     onChange={(e) => setNovoVoluntario(prev => ({ ...prev, disponibilidadeSabado: e.target.checked }))}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-gray-600 focus:ring-gray-400 border-gray-300 rounded"
                   />
                   <span className="ml-2 text-sm text-gray-700">Disponível para Sábado</span>
                 </label>
               </div>
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 >
                   Salvar
                 </button>

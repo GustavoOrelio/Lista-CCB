@@ -6,8 +6,8 @@ import Sidebar from './components/Sidebar';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Sistema de Controle',
-  description: 'Sistema de controle de porteiros e estacionamento',
+  title: 'Sistema CCB',
+  description: 'Sistema de controle de voluntários e estacionamento',
 };
 
 export default function RootLayout({
@@ -16,11 +16,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
-      <body className={inter.className}>
-        <div className="flex">
+    <html lang="pt-BR" className="bg-gray-100">
+      <body className={`${inter.className} bg-gray-100 min-h-screen`}>
+        <div className="flex min-h-screen bg-gray-100">
           <Sidebar />
-          <main className="flex-1 ml-64 p-6">
+          <main className="flex-1 ml-64 bg-gray-100">
             {children}
           </main>
         </div>
