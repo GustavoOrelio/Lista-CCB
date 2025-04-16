@@ -6,8 +6,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+} from "@/app/components/ui/table";
+import { Button } from "@/app/components/ui/button";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 interface VoluntariosTableProps {

@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Igreja } from '../types/igreja';
 import { igrejaService } from '../services/igrejaService';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/app/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
+import { Input } from '@/app/components/ui/input';
+import { Label } from '@/app/components/ui/label';
+import { Checkbox } from '@/app/components/ui/checkbox';
 import { toast } from 'sonner';
 import {
   Table,
@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/app/components/ui/table";
 import { DeleteConfirmationDialog } from '../components/voluntarios/DeleteConfirmationDialog';
 
 const diasCulto = [

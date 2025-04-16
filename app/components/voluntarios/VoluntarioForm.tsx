@@ -1,16 +1,16 @@
 import { Voluntario } from "@/app/types/voluntario";
 import { Igreja } from "@/app/types/igreja";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/app/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+} from "@/app/components/ui/select";
+import { Checkbox } from "@/app/components/ui/checkbox";
+import { Button } from "@/app/components/ui/button";
+import { Label } from "@/app/components/ui/label";
 
 type DiaSemana = {
   key: keyof Voluntario['disponibilidades'];
