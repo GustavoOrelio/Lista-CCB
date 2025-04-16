@@ -7,11 +7,13 @@ import {
   HomeIcon,
   UserPlusIcon,
   ClipboardDocumentListIcon,
-  TruckIcon
+  TruckIcon,
+  BuildingOffice2Icon
 } from '@heroicons/react/24/outline';
 
 const menuItems = [
   { name: 'Home', href: '/', icon: HomeIcon },
+  { name: 'Igrejas', href: '/igrejas', icon: BuildingOffice2Icon },
   { name: 'Voluntários', href: '/voluntarios', icon: UserPlusIcon },
   { name: 'Porteiros', href: '/porteiros', icon: UserGroupIcon },
   { name: 'Pátio', href: '/patio', icon: TruckIcon },
@@ -34,8 +36,8 @@ export default function Sidebar() {
               key={item.name}
               href={item.href}
               className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all ${isActive
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
             >
               <item.icon
