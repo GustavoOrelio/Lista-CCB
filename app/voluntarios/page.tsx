@@ -7,7 +7,7 @@ import { Igreja } from '../types/igreja';
 import { voluntarioService } from '../services/voluntarioService';
 import { igrejaService } from '../services/igrejaService';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VoluntariosTable } from '../components/voluntarios/VoluntariosTable';
 import { VoluntarioForm } from '../components/voluntarios/VoluntarioForm';
 import { DeleteConfirmationDialog } from '../components/voluntarios/DeleteConfirmationDialog';
@@ -197,12 +197,9 @@ export default function Voluntarios() {
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-medium text-gray-900">
-              {voluntarioEmEdicao ? 'Editar Voluntário' : 'Adicionar Novo Voluntário'}
-            </h2>
-          </div>
-
+          <DialogTitle>
+            {voluntarioEmEdicao ? 'Editar Voluntário' : 'Adicionar Novo Voluntário'}
+          </DialogTitle>
           <VoluntarioForm
             voluntario={novoVoluntario}
             igrejas={igrejas}
