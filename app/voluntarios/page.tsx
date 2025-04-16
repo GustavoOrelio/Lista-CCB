@@ -3,28 +3,54 @@
 import { useState, useEffect } from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { Voluntario } from '../types/voluntario';
+import { Igreja } from '../types/igreja';
 import { voluntarioService } from '../services/voluntarioService';
+import { igrejaService } from '../services/igrejaService';
+
+const diasSemana = [
+  { key: 'domingo', label: 'Domingo', cultoProp: 'cultoDomingo' },
+  { key: 'segunda', label: 'Segunda-feira', cultoProp: 'cultoSegunda' },
+  { key: 'terca', label: 'Terça-feira', cultoProp: 'cultoTerca' },
+  { key: 'quarta', label: 'Quarta-feira', cultoProp: 'cultoQuarta' },
+  { key: 'quinta', label: 'Quinta-feira', cultoProp: 'cultoQuinta' },
+  { key: 'sexta', label: 'Sexta-feira', cultoProp: 'cultoSexta' },
+  { key: 'sabado', label: 'Sábado', cultoProp: 'cultoSabado' },
+] as const;
 
 export default function Voluntarios() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
-  const [novoVoluntario, setNovoVoluntario] = useState({
+  const [igrejas, setIgrejas] = useState<Igreja[]>([]);
+  const [novoVoluntario, setNovoVoluntario] = useState<Omit<Voluntario, 'id'>>({
     nome: '',
-    disponibilidadeTerca: false,
-    disponibilidadeSabado: false,
+    igrejaId: '',
+    igrejaNome: '',
+    disponibilidades: {
+      domingo: false,
+      segunda: false,
+      terca: false,
+      quarta: false,
+      quinta: false,
+      sexta: false,
+      sabado: false,
+    },
   });
 
   useEffect(() => {
-    carregarVoluntarios();
+    carregarDados();
   }, []);
 
-  const carregarVoluntarios = async () => {
+  const carregarDados = async () => {
     try {
-      const dados = await voluntarioService.listar();
-      setVoluntarios(dados);
+      const [dadosVoluntarios, dadosIgrejas] = await Promise.all([
+        voluntarioService.listar(),
+        igrejaService.listar()
+      ]);
+      setVoluntarios(dadosVoluntarios);
+      setIgrejas(dadosIgrejas);
     } catch (error) {
-      console.error('Erro ao carregar voluntários:', error);
-      alert('Erro ao carregar voluntários. Por favor, tente novamente.');
+      console.error('Erro ao carregar dados:', error);
+      alert('Erro ao carregar dados. Por favor, tente novamente.');
     }
   };
 
@@ -35,14 +61,52 @@ export default function Voluntarios() {
       setVoluntarios(prev => [...prev, { id, ...novoVoluntario }]);
       setNovoVoluntario({
         nome: '',
-        disponibilidadeTerca: false,
-        disponibilidadeSabado: false,
+        igrejaId: '',
+        igrejaNome: '',
+        disponibilidades: {
+          domingo: false,
+          segunda: false,
+          terca: false,
+          quarta: false,
+          quinta: false,
+          sexta: false,
+          sabado: false,
+        },
       });
       setIsModalOpen(false);
     } catch (error) {
       console.error('Erro ao salvar voluntário:', error);
       alert('Erro ao salvar voluntário. Por favor, tente novamente.');
     }
+  };
+
+  const handleIgrejaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const igreja = igrejas.find(i => i.id === e.target.value);
+    if (igreja) {
+      setNovoVoluntario(prev => ({
+        ...prev,
+        igrejaId: igreja.id,
+        igrejaNome: igreja.nome,
+        disponibilidades: {
+          domingo: false,
+          segunda: false,
+          terca: false,
+          quarta: false,
+          quinta: false,
+          sexta: false,
+          sabado: false,
+        },
+      }));
+    }
+  };
+
+  const formatarDisponibilidades = (disponibilidades: Voluntario['disponibilidades']) => {
+    if (!disponibilidades) return '';
+
+    return diasSemana
+      .filter(dia => disponibilidades[dia.key])
+      .map(dia => dia.label)
+      .join(', ');
   };
 
   return (
@@ -67,10 +131,10 @@ export default function Voluntarios() {
                 Nome
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
-                Disponível Terça
+                Igreja
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
-                Disponível Sábado
+                Disponibilidade
               </th>
             </tr>
           </thead>
@@ -81,10 +145,10 @@ export default function Voluntarios() {
                   {voluntario.nome}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {voluntario.disponibilidadeTerca ? 'Sim' : 'Não'}
+                  {voluntario.igrejaNome}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {voluntario.disponibilidadeSabado ? 'Sim' : 'Não'}
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {formatarDisponibilidades(voluntario.disponibilidades)}
                 </td>
               </tr>
             ))}
@@ -123,28 +187,56 @@ export default function Voluntarios() {
                     required
                   />
                 </div>
+
                 <div>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={novoVoluntario.disponibilidadeTerca}
-                      onChange={(e) => setNovoVoluntario(prev => ({ ...prev, disponibilidadeTerca: e.target.checked }))}
-                      className="h-4 w-4 text-gray-600 focus:ring-gray-400 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Disponível para Terça-feira</span>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Igreja
                   </label>
+                  <select
+                    value={novoVoluntario.igrejaId}
+                    onChange={handleIgrejaChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                    required
+                  >
+                    <option value="">Selecione uma igreja</option>
+                    {igrejas.map(igreja => (
+                      <option key={igreja.id} value={igreja.id}>
+                        {igreja.nome}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={novoVoluntario.disponibilidadeSabado}
-                      onChange={(e) => setNovoVoluntario(prev => ({ ...prev, disponibilidadeSabado: e.target.checked }))}
-                      className="h-4 w-4 text-gray-600 focus:ring-gray-400 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Disponível para Sábado</span>
-                  </label>
-                </div>
+
+                {novoVoluntario.igrejaId && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Disponibilidade
+                    </label>
+                    {diasSemana.map(dia => {
+                      const igreja = igrejas.find(i => i.id === novoVoluntario.igrejaId);
+                      if (!igreja || !igreja[dia.cultoProp]) return null;
+
+                      return (
+                        <label key={dia.key} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={novoVoluntario?.disponibilidades?.[dia.key] ?? false}
+                            onChange={(e) => setNovoVoluntario(prev => ({
+                              ...prev,
+                              disponibilidades: {
+                                ...prev.disponibilidades,
+                                [dia.key]: e.target.checked
+                              } as Voluntario['disponibilidades']
+                            }))}
+                            className="h-4 w-4 text-gray-600 focus:ring-gray-400 border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Disponível para {dia.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
