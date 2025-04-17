@@ -6,6 +6,7 @@ export interface Voluntario {
   cargoId: string;
   cargoNome: string;
   disponibilidades?: {
+    domingoRDJ: boolean;
     domingo: boolean;
     segunda: boolean;
     terca: boolean;

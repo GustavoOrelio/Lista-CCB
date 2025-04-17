@@ -14,6 +14,7 @@ import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 
 type DiaSemana = {
+  id: keyof Voluntario['disponibilidades'];
   key: keyof Voluntario['disponibilidades'];
   label: string;
   cultoProp: keyof Igreja;
@@ -48,6 +49,8 @@ export function VoluntarioForm({
   isEditing,
   onCancel,
 }: VoluntarioFormProps) {
+  const igreja = igrejas.find(i => i.id === voluntario.igrejaId);
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -100,35 +103,30 @@ export function VoluntarioForm({
         </Select>
       </div>
 
-      {voluntario.igrejaId && (
+      {voluntario.igrejaId && igreja && (
         <div className="space-y-2">
           <Label>Disponibilidade</Label>
           <div className="space-y-2">
-            {diasSemana.map((dia) => {
-              const igreja = igrejas.find((i) => i.id === voluntario.igrejaId);
-              if (!igreja || !igreja[dia.cultoProp]) return null;
-
-              return (
-                <div key={dia.key} className="flex items-center space-x-2">
+            {diasSemana
+              .filter(dia => igreja[dia.cultoProp])
+              .map((dia) => (
+                <div key={dia.id} className="flex items-center space-x-2">
                   <Checkbox
-                    id={`disponibilidade-${dia.key}`}
-                    checked={voluntario.disponibilidades[dia.key]}
+                    id={`disponibilidade-${dia.id}`}
+                    checked={voluntario.disponibilidades[dia.id]}
                     onCheckedChange={(checked) =>
                       onChange({
                         ...voluntario,
                         disponibilidades: {
                           ...voluntario.disponibilidades,
-                          [dia.key]: checked as boolean,
+                          [dia.id]: checked as boolean,
                         },
                       })
                     }
                   />
-                  <Label htmlFor={`disponibilidade-${dia.key}`}>
-                    Disponível para {dia.label}
-                  </Label>
+                  <Label htmlFor={`disponibilidade-${dia.id}`}>{dia.label}</Label>
                 </div>
-              );
-            })}
+              ))}
           </div>
         </div>
       )}

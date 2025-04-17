@@ -15,19 +15,23 @@ import { VoluntarioForm } from '../components/voluntarios/VoluntarioForm';
 import { DeleteConfirmationDialog } from '../components/voluntarios/DeleteConfirmationDialog';
 import { toast } from 'sonner';
 
-const diasSemana = [
-  { key: 'domingo', label: 'Domingo', cultoProp: 'cultoDomingo' },
-  { key: 'segunda', label: 'Segunda-feira', cultoProp: 'cultoSegunda' },
-  { key: 'terca', label: 'Terça-feira', cultoProp: 'cultoTerca' },
-  { key: 'quarta', label: 'Quarta-feira', cultoProp: 'cultoQuarta' },
-  { key: 'quinta', label: 'Quinta-feira', cultoProp: 'cultoQuinta' },
-  { key: 'sexta', label: 'Sexta-feira', cultoProp: 'cultoSexta' },
-  { key: 'sabado', label: 'Sábado', cultoProp: 'cultoSabado' },
-] as {
+type DiaSemana = {
+  id: keyof Voluntario['disponibilidades'];
   key: keyof Voluntario['disponibilidades'];
   label: string;
   cultoProp: keyof Igreja;
-}[];
+};
+
+const diasSemana: DiaSemana[] = [
+  { id: 'domingoRDJ', key: 'domingoRDJ', label: 'Domingo (RDJ)', cultoProp: 'cultoDomingoRDJ' },
+  { id: 'domingo', key: 'domingo', label: 'Domingo', cultoProp: 'cultoDomingo' },
+  { id: 'segunda', key: 'segunda', label: 'Segunda-feira', cultoProp: 'cultoSegunda' },
+  { id: 'terca', key: 'terca', label: 'Terça-feira', cultoProp: 'cultoTerca' },
+  { id: 'quarta', key: 'quarta', label: 'Quarta-feira', cultoProp: 'cultoQuarta' },
+  { id: 'quinta', key: 'quinta', label: 'Quinta-feira', cultoProp: 'cultoQuinta' },
+  { id: 'sexta', key: 'sexta', label: 'Sexta-feira', cultoProp: 'cultoSexta' },
+  { id: 'sabado', key: 'sabado', label: 'Sábado', cultoProp: 'cultoSabado' }
+];
 
 export default function Voluntarios() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,6 +50,7 @@ export default function Voluntarios() {
     cargoId: '',
     cargoNome: '',
     disponibilidades: {
+      domingoRDJ: false,
       domingo: false,
       segunda: false,
       terca: false,
@@ -106,6 +111,7 @@ export default function Voluntarios() {
       cargoId: '',
       cargoNome: '',
       disponibilidades: {
+        domingoRDJ: false,
         domingo: false,
         segunda: false,
         terca: false,
@@ -127,6 +133,7 @@ export default function Voluntarios() {
         igrejaId: igreja.id,
         igrejaNome: igreja.nome,
         disponibilidades: {
+          domingoRDJ: false,
           domingo: false,
           segunda: false,
           terca: false,
@@ -159,6 +166,7 @@ export default function Voluntarios() {
       cargoId: voluntario.cargoId,
       cargoNome: voluntario.cargoNome,
       disponibilidades: voluntario.disponibilidades || {
+        domingoRDJ: false,
         domingo: false,
         segunda: false,
         terca: false,
