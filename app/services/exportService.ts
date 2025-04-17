@@ -19,7 +19,8 @@ export const exportService = {
         year: undefined,
       }) +
         " - " +
-        this.getDiaSemana(item.data),
+        this.getDiaSemana(item.data) +
+        (item.tipoCulto === "domingoRDJ" ? " (RDJ)" : ""),
       item.voluntarios.map((v) => v.nome).join(" e "),
     ]);
 
@@ -82,7 +83,7 @@ export const exportService = {
 
   getDiaSemana(data: Date): string {
     const diasSemana = {
-      0: "Domingo (RJM)",
+      0: "Domingo",
       1: "Segunda-Feira",
       2: "Terça-Feira",
       3: "Quarta-Feira",
