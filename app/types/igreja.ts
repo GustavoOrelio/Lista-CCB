@@ -1,6 +1,7 @@
 export interface Igreja {
   id: string;
   nome: string;
+  cultoDomingoRDJ: boolean;
   cultoDomingo: boolean;
   cultoSegunda: boolean;
   cultoTerca: boolean;

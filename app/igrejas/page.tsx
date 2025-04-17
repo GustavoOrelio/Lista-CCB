@@ -21,6 +21,7 @@ import {
 import { DeleteConfirmationDialog } from '../components/voluntarios/DeleteConfirmationDialog';
 
 const diasCulto = [
+  { key: 'cultoDomingoRDJ', label: 'Domingo (RDJ)' },
   { key: 'cultoDomingo', label: 'Domingo' },
   { key: 'cultoSegunda', label: 'Segunda-feira' },
   { key: 'cultoTerca', label: 'Terça-feira' },
@@ -38,6 +39,7 @@ export default function Igrejas() {
   const [igrejaEmEdicao, setIgrejaEmEdicao] = useState<Igreja | null>(null);
   const [novaIgreja, setNovaIgreja] = useState<Omit<Igreja, 'id'>>({
     nome: '',
+    cultoDomingoRDJ: false,
     cultoDomingo: false,
     cultoSegunda: false,
     cultoTerca: false,
@@ -85,6 +87,7 @@ export default function Igrejas() {
   const handleCloseModal = () => {
     setNovaIgreja({
       nome: '',
+      cultoDomingoRDJ: false,
       cultoDomingo: false,
       cultoSegunda: false,
       cultoTerca: false,
@@ -101,6 +104,7 @@ export default function Igrejas() {
     setIgrejaEmEdicao(igreja);
     setNovaIgreja({
       nome: igreja.nome,
+      cultoDomingoRDJ: igreja.cultoDomingoRDJ,
       cultoDomingo: igreja.cultoDomingo,
       cultoSegunda: igreja.cultoSegunda,
       cultoTerca: igreja.cultoTerca,
