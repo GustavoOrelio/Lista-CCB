@@ -352,7 +352,7 @@ export default function EscalasPage() {
                         >
                           <span>
                             {item.data.toLocaleDateString('pt-BR')}
-                            {item.tipoCulto === 'domingoRDJ' ? ' (RDJ)' : item.tipoCulto === 'domingo' ? ' (Noite)' : ''}
+                            {item.tipoCulto === 'domingoRDJ' ? ' (RDJ)' : ''}
                           </span>
                           <div className="flex gap-2">
                             {item.voluntarios.map((voluntario, idx) => (
