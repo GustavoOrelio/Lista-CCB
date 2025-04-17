@@ -19,6 +19,11 @@ interface Cargo {
   nome: string;
 }
 
+interface EscalaItem {
+  data: Date;
+  voluntarios: { id: string; nome: string }[];
+}
+
 export default function EscalasPage() {
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const [selectedIgreja, setSelectedIgreja] = useState<string>('');
@@ -27,7 +32,7 @@ export default function EscalasPage() {
   const [cargos, setCargos] = useState<Cargo[]>([]);
   const [diasCulto, setDiasCulto] = useState<Date[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [escalaAtual, setEscalaAtual] = useState<Array<{ data: Date; voluntarioNome: string }>>([]);
+  const [escalaAtual, setEscalaAtual] = useState<EscalaItem[]>([]);
 
   // Carregar igrejas e cargos
   useEffect(() => {
@@ -263,7 +268,14 @@ export default function EscalasPage() {
                   {escalaAtual.map((item) => (
                     <div key={item.data.toISOString()} className="flex items-center justify-between p-2 border rounded">
                       <span>{item.data.toLocaleDateString('pt-BR')}</span>
-                      <span>{item.voluntarioNome}</span>
+                      <div className="flex gap-2">
+                        {item.voluntarios.map((voluntario, index) => (
+                          <span key={voluntario.id}>
+                            {voluntario.nome}
+                            {index < item.voluntarios.length - 1 ? ' | ' : ''}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>

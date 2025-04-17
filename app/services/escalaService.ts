@@ -33,8 +33,10 @@ interface Voluntario {
 
 interface EscalaItem {
   data: Date;
-  voluntarioId: string;
-  voluntarioNome: string;
+  voluntarios: {
+    id: string;
+    nome: string;
+  }[];
   igrejaId: string;
   cargoId: string;
 }
@@ -201,22 +203,57 @@ export class EscalaService {
     for (const item of escala) {
       await addDoc(escalaRef, {
         data: Timestamp.fromDate(item.data),
-        voluntarioId: item.voluntarioId,
-        voluntarioNome: item.voluntarioNome,
+        voluntarios: item.voluntarios,
         igrejaId: item.igrejaId,
         cargoId: item.cargoId,
         criadoEm: Timestamp.fromDate(new Date()),
       });
 
-      // Atualiza as estatísticas do voluntário
-      const voluntarioRef = doc(db, "voluntarios", item.voluntarioId);
-      batch.update(voluntarioRef, {
-        diasTrabalhados: increment(1),
-        ultimaEscala: Timestamp.fromDate(item.data),
-      });
+      // Atualiza as estatísticas dos voluntários
+      for (const voluntario of item.voluntarios) {
+        const voluntarioRef = doc(db, "voluntarios", voluntario.id);
+        batch.update(voluntarioRef, {
+          diasTrabalhados: increment(1),
+          ultimaEscala: Timestamp.fromDate(item.data),
+        });
+      }
     }
 
     await batch.commit();
+  }
+
+  private static async deletarEscalaExistente(
+    mes: number,
+    ano: number,
+    igrejaId: string,
+    cargoId: string
+  ) {
+    const escalaRef = collection(db, "escalas");
+    const inicio = new Date(ano, mes, 1);
+    const fim = new Date(ano, mes + 1, 0);
+
+    const q = query(
+      escalaRef,
+      where("igrejaId", "==", igrejaId),
+      where("cargoId", "==", cargoId),
+      where("data", ">=", Timestamp.fromDate(inicio)),
+      where("data", "<=", Timestamp.fromDate(fim))
+    );
+
+    const snapshot = await getDocs(q);
+    const batch = writeBatch(db);
+
+    // Deleta todos os documentos da escala antiga
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    if (snapshot.docs.length > 0) {
+      await batch.commit();
+      console.log(
+        `Escala antiga deletada: ${snapshot.docs.length} registros removidos`
+      );
+    }
   }
 
   static async gerarEscala(
@@ -225,7 +262,22 @@ export class EscalaService {
     cargoId: string
   ): Promise<EscalaItem[]> {
     console.log("Iniciando geração de escala:", { dias, igrejaId, cargoId });
+
+    // Deleta a escala antiga do mesmo mês
+    if (dias.length > 0) {
+      const primeiroDia = dias[0];
+      await this.deletarEscalaExistente(
+        primeiroDia.getMonth(),
+        primeiroDia.getFullYear(),
+        igrejaId,
+        cargoId
+      );
+    }
+
     const escala: EscalaItem[] = [];
+
+    // Mapa para controlar quantas vezes cada voluntário foi escalado
+    const contagemEscalas: { [voluntarioId: string]: number } = {};
 
     // Ordena os dias para garantir que a distribuição seja feita cronologicamente
     const diasOrdenados = [...dias].sort((a, b) => a.getTime() - b.getTime());
@@ -234,6 +286,18 @@ export class EscalaService {
       diasOrdenados.map((d) => d.toLocaleDateString())
     );
 
+    // Primeiro, vamos buscar todos os voluntários disponíveis para qualquer dia
+    const todosVoluntarios = await this.getVoluntariosDisponiveis(
+      "sabado", // Usamos qualquer dia aqui, pois vamos filtrar depois
+      igrejaId,
+      cargoId
+    );
+
+    // Inicializa o contador para todos os voluntários
+    todosVoluntarios.forEach((v) => {
+      contagemEscalas[v.id] = 0;
+    });
+
     for (const dia of diasOrdenados) {
       const diaDaSemana = this.getDiaDaSemana(dia);
       console.log("Buscando voluntários para:", {
@@ -241,49 +305,72 @@ export class EscalaService {
         diaDaSemana,
       });
 
-      const voluntariosDisponiveis = await this.getVoluntariosDisponiveis(
-        diaDaSemana,
-        igrejaId,
-        cargoId
+      // Filtra os voluntários disponíveis para este dia específico
+      const voluntariosDisponiveis = todosVoluntarios.filter(
+        (v) =>
+          v.disponibilidades[diaDaSemana as keyof typeof v.disponibilidades]
       );
+
       console.log(
         "Voluntários disponíveis:",
         voluntariosDisponiveis.map((v) => ({
           nome: v.nome,
           disponibilidades: v.disponibilidades,
-          diasTrabalhados: v.diasTrabalhados,
+          vezesEscalado: contagemEscalas[v.id],
         }))
       );
 
-      if (voluntariosDisponiveis.length === 0) {
-        console.warn(`Não há voluntários disponíveis para ${diaDaSemana}`);
-        continue; // Pula para o próximo dia em vez de lançar erro
+      // Precisamos de pelo menos 2 voluntários disponíveis
+      if (voluntariosDisponiveis.length < 2) {
+        console.warn(
+          `Não há voluntários suficientes para ${diaDaSemana} (mínimo 2 necessários)`
+        );
+        continue;
       }
 
       // Ordena voluntários por:
-      // 1. Menor número de dias trabalhados
-      // 2. Maior tempo desde a última escala
-      const voluntarioOrdenados = voluntariosDisponiveis.sort((a, b) => {
+      // 1. Menor número de vezes escalado no mês atual
+      // 2. Menor número total de dias trabalhados
+      // 3. Maior tempo desde a última escala
+      const voluntariosOrdenados = voluntariosDisponiveis.sort((a, b) => {
+        // Primeiro critério: número de vezes escalado no mês atual
+        const diffEscalasMes = contagemEscalas[a.id] - contagemEscalas[b.id];
+        if (diffEscalasMes !== 0) return diffEscalasMes;
+
+        // Segundo critério: total de dias trabalhados
         if (a.diasTrabalhados !== b.diasTrabalhados) {
           return a.diasTrabalhados - b.diasTrabalhados;
         }
 
+        // Terceiro critério: tempo desde a última escala
         if (!a.ultimaEscala) return -1;
         if (!b.ultimaEscala) return 1;
-
         return a.ultimaEscala.getTime() - b.ultimaEscala.getTime();
       });
 
-      const voluntarioSelecionado = voluntarioOrdenados[0];
-      console.log("Voluntário selecionado:", {
-        nome: voluntarioSelecionado.nome,
-        dia: dia.toLocaleDateString(),
+      // Seleciona os 2 voluntários com menos escalas
+      const voluntariosSelecionados = voluntariosOrdenados.slice(0, 2);
+
+      // Atualiza o contador de escalas
+      voluntariosSelecionados.forEach((v) => {
+        contagemEscalas[v.id] = (contagemEscalas[v.id] || 0) + 1;
       });
 
+      console.log("Voluntários selecionados:", {
+        dia: dia.toLocaleDateString(),
+        voluntarios: voluntariosSelecionados.map((v) => ({
+          nome: v.nome,
+          vezesEscalado: contagemEscalas[v.id],
+        })),
+      });
+
+      // Adiciona os dois voluntários à mesma linha da escala
       escala.push({
         data: dia,
-        voluntarioId: voluntarioSelecionado.id,
-        voluntarioNome: voluntarioSelecionado.nome,
+        voluntarios: voluntariosSelecionados.map((v) => ({
+          id: v.id,
+          nome: v.nome,
+        })),
         igrejaId,
         cargoId,
       });
@@ -318,13 +405,15 @@ export class EscalaService {
 
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map((doc) => ({
-      data: doc.data().data.toDate(),
-      voluntarioId: doc.data().voluntarioId,
-      voluntarioNome: doc.data().voluntarioNome,
-      igrejaId: doc.data().igrejaId,
-      cargoId: doc.data().cargoId,
-    }));
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        data: data.data.toDate(),
+        voluntarios: data.voluntarios,
+        igrejaId: data.igrejaId,
+        cargoId: data.cargoId,
+      };
+    });
   }
 
   static async atualizarDiasCultoIgreja(
