@@ -6,4 +6,5 @@ export interface EscalaItem {
   }[];
   igrejaId: string;
   cargoId: string;
+  tipoCulto: string; // 'domingoRDJ' | 'domingo' | 'segunda' | etc
 }

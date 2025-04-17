@@ -41,6 +41,7 @@ interface EscalaItem {
   }[];
   igrejaId: string;
   cargoId: string;
+  tipoCulto: string;
 }
 
 interface IgrejaFirebase {
@@ -210,6 +211,7 @@ export class EscalaService {
         voluntarios: item.voluntarios,
         igrejaId: item.igrejaId,
         cargoId: item.cargoId,
+        tipoCulto: item.tipoCulto,
         criadoEm: Timestamp.fromDate(new Date()),
       });
 
@@ -280,6 +282,7 @@ export class EscalaService {
 
     const escala: EscalaItem[] = [];
     const contagemEscalas: { [voluntarioId: string]: number } = {};
+    const diasProcessados = new Set<string>();
 
     // Ordena os dias para garantir que a distribuição seja feita cronologicamente
     const diasOrdenados = [...dias].sort((a, b) => a.getTime() - b.getTime());
@@ -319,71 +322,88 @@ export class EscalaService {
         "sabado",
       ][dia.getDay()];
 
-      // Se for domingo, precisamos verificar se é RDJ ou normal
-      const diaParaBuscar =
-        diaDaSemana === "domingo" && igreja.cultoDomingoRDJ === true
-          ? "domingoRDJ"
-          : diaDaSemana;
-
-      console.log("Processando dia:", {
-        data: dia.toLocaleDateString(),
-        diaDaSemana,
-        diaParaBuscar,
-        cultoDomingoRDJ: igreja.cultoDomingoRDJ,
-      });
-
-      // Busca os voluntários disponíveis para este dia específico
-      const voluntariosDisponiveis = await this.getVoluntariosDisponiveis(
-        diaParaBuscar,
-        igrejaId,
-        cargoId
-      );
-
-      console.log("Voluntários disponíveis:", {
-        dia: dia.toLocaleDateString(),
-        diaParaBuscar,
-        quantidade: voluntariosDisponiveis.length,
-        voluntarios: voluntariosDisponiveis.map((v) => v.nome),
-      });
-
-      if (voluntariosDisponiveis.length < 2) {
-        console.log(
-          `Não há voluntários suficientes para o dia ${dia.toLocaleDateString()}`
-        );
+      const dataString = dia.toISOString().split("T")[0];
+      if (diasProcessados.has(dataString)) {
         continue;
       }
 
-      // Ordena os voluntários por número de escalas e última data de trabalho
-      const voluntariosOrdenados = [...voluntariosDisponiveis].sort((a, b) => {
-        // Primeiro critério: número de escalas
-        const diferencaEscalas =
-          (contagemEscalas[a.id] || 0) - (contagemEscalas[b.id] || 0);
-        if (diferencaEscalas !== 0) return diferencaEscalas;
+      // Array para guardar os tipos de culto que precisamos processar para este dia
+      const cultosParaProcessar: string[] = [];
 
-        // Segundo critério: última data de escala
-        const ultimaA = a.ultimaEscala ? a.ultimaEscala.getTime() : 0;
-        const ultimaB = b.ultimaEscala ? b.ultimaEscala.getTime() : 0;
-        return ultimaA - ultimaB;
-      });
+      // Se for domingo, verifica se precisa processar RDJ e/ou culto normal
+      if (diaDaSemana === "domingo") {
+        // Se tem RDJ, adiciona
+        if (igreja.cultoDomingoRDJ === true) {
+          cultosParaProcessar.push("domingoRDJ");
+        }
+        // Se tem culto normal de domingo, adiciona também
+        if (igreja.cultoDomingo === true) {
+          cultosParaProcessar.push("domingo");
+        }
+        diasProcessados.add(dataString);
+      } else {
+        cultosParaProcessar.push(diaDaSemana);
+        diasProcessados.add(dataString);
+      }
 
-      // Seleciona os dois primeiros voluntários
-      const voluntariosSelecionados = voluntariosOrdenados.slice(0, 2);
+      // Processa cada tipo de culto para este dia
+      for (const tipoCulto of cultosParaProcessar) {
+        // Busca os voluntários disponíveis para este tipo de culto específico
+        const voluntariosDisponiveis = await this.getVoluntariosDisponiveis(
+          tipoCulto,
+          igrejaId,
+          cargoId
+        );
 
-      // Atualiza o contador de escalas
-      voluntariosSelecionados.forEach((v) => {
-        contagemEscalas[v.id] = (contagemEscalas[v.id] || 0) + 1;
-      });
+        if (voluntariosDisponiveis.length < 2) {
+          console.log(
+            `Não há voluntários suficientes para o dia ${dia.toLocaleDateString()} - ${tipoCulto}`
+          );
+          continue;
+        }
 
-      // Adiciona à escala
-      escala.push({
-        data: dia,
-        voluntarios: voluntariosSelecionados.map((v) => ({
-          id: v.id,
-          nome: v.nome,
-        })),
-        igrejaId,
-        cargoId,
-      });
+        // Ordena os voluntários por número de escalas e última data de trabalho
+        const voluntariosOrdenados = [...voluntariosDisponiveis].sort(
+          (a, b) => {
+            // Primeiro critério: número de escalas
+            const diferencaEscalas =
+              (contagemEscalas[a.id] || 0) - (contagemEscalas[b.id] || 0);
+            if (diferencaEscalas !== 0) return diferencaEscalas;
+
+            // Segundo critério: última data de escala
+            const ultimaA = a.ultimaEscala ? a.ultimaEscala.getTime() : 0;
+            const ultimaB = b.ultimaEscala ? b.ultimaEscala.getTime() : 0;
+            return ultimaA - ultimaB;
+          }
+        );
+
+        // Seleciona os dois primeiros voluntários
+        const voluntariosSelecionados = voluntariosOrdenados.slice(0, 2);
+
+        // Atualiza o contador de escalas
+        voluntariosSelecionados.forEach((v) => {
+          contagemEscalas[v.id] = (contagemEscalas[v.id] || 0) + 1;
+        });
+
+        // Adiciona à escala
+        const novaData = new Date(dia);
+        if (tipoCulto === "domingoRDJ") {
+          novaData.setHours(9);
+        } else if (tipoCulto === "domingo") {
+          novaData.setHours(18);
+        }
+
+        escala.push({
+          data: novaData,
+          voluntarios: voluntariosSelecionados.map((v) => ({
+            id: v.id,
+            nome: v.nome,
+          })),
+          igrejaId,
+          cargoId,
+          tipoCulto,
+        });
+      }
     }
 
     if (escala.length > 0) {
@@ -422,6 +442,7 @@ export class EscalaService {
         voluntarios: data.voluntarios,
         igrejaId: data.igrejaId,
         cargoId: data.cargoId,
+        tipoCulto: data.tipoCulto || "domingo",
       };
     });
   }

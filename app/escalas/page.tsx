@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -8,7 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { EscalaService } from '@/app/services/escalaService';
 import { toast } from 'sonner';
 import { exportService } from '../services/exportService';
-import { EscalaItem } from '../types/escala';
+
+interface EscalaItem {
+  data: Date;
+  voluntarios: {
+    id: string;
+    nome: string;
+  }[];
+  igrejaId: string;
+  cargoId: string;
+  tipoCulto: string;
+}
 
 interface Igreja {
   id: string;
@@ -117,33 +128,46 @@ export default function EscalasPage() {
     // Gerar datas dos cultos para o mês selecionado
     const diasDoMes = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0).getDate();
     const diasCultoDoMes: Date[] = [];
+    const diasProcessados = new Set<string>();
 
     console.log('Gerando dias de culto para:', {
       mes: selectedMonth.getMonth() + 1,
       ano: selectedMonth.getFullYear(),
       diasCultoConfigurados: igreja.diasCulto,
-      cultoDomingoRDJ: igreja.cultoDomingoRDJ
+      cultoDomingoRDJ: igreja.cultoDomingoRDJ,
+      cultoDomingo: igreja.cultoDomingo
     });
 
     for (let dia = 1; dia <= diasDoMes; dia++) {
       const data = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), dia);
       const diaDaSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'][data.getDay()];
+      const dataString = data.toISOString().split('T')[0];
 
-      // Se for domingo e a igreja tem culto RDJ, adiciona como domingoRDJ
-      if (diaDaSemana === 'domingo' && igreja.cultoDomingoRDJ === true) {
-        diasCultoDoMes.push(data);
-        console.log('Dia de culto RDJ encontrado:', {
-          data: data.toLocaleDateString(),
-          diaDaSemana: 'domingoRDJ'
-        });
+      // Se já processamos este dia, pula
+      if (diasProcessados.has(dataString)) {
+        continue;
+      }
+
+      // Se for domingo, verifica se tem algum dos cultos
+      if (diaDaSemana === 'domingo') {
+        // Se tem culto RDJ, adiciona
+        if (igreja.cultoDomingoRDJ === true) {
+          const novaData = new Date(data);
+          novaData.setHours(9); // Define horário para RDJ
+          diasCultoDoMes.push(novaData);
+        }
+        // Se tem culto normal de domingo, adiciona também
+        if (igreja.cultoDomingo === true) {
+          const novaData = new Date(data);
+          novaData.setHours(18); // Define horário para culto noturno
+          diasCultoDoMes.push(novaData);
+        }
+        diasProcessados.add(dataString);
       }
       // Para os outros dias, verifica normalmente
       else if (igreja.diasCulto.includes(diaDaSemana)) {
-        diasCultoDoMes.push(data);
-        console.log('Dia de culto encontrado:', {
-          data: data.toLocaleDateString(),
-          diaDaSemana
-        });
+        diasCultoDoMes.push(new Date(data));
+        diasProcessados.add(dataString);
       }
     }
 
@@ -305,19 +329,43 @@ export default function EscalasPage() {
             <div className="space-y-4">
               {escalaAtual.length > 0 ? (
                 <div className="space-y-2">
-                  {escalaAtual.map((item) => (
-                    <div key={item.data.toISOString()} className="flex items-center justify-between p-2 border rounded">
-                      <span>{item.data.toLocaleDateString('pt-BR')}</span>
-                      <div className="flex gap-2">
-                        {item.voluntarios.map((voluntario, index) => (
-                          <span key={voluntario.id}>
-                            {voluntario.nome}
-                            {index < item.voluntarios.length - 1 ? ' | ' : ''}
+                  {escalaAtual
+                    .sort((a, b) => {
+                      // Primeiro ordena por data
+                      const dateCompare = a.data.getTime() - b.data.getTime();
+                      if (dateCompare !== 0) return dateCompare;
+
+                      // Se for mesmo dia, RDJ vem antes de domingo
+                      if (a.tipoCulto === 'domingoRDJ' && b.tipoCulto === 'domingo') return -1;
+                      if (a.tipoCulto === 'domingo' && b.tipoCulto === 'domingoRDJ') return 1;
+                      return 0;
+                    })
+                    .reduce((acc, item, index) => {
+                      // Cria um identificador único baseado na data e tipo de culto
+                      const dateStr = item.data.toISOString().split('T')[0];
+                      const key = `${dateStr}-${item.tipoCulto}-${index}`;
+
+                      acc.push(
+                        <div
+                          key={key}
+                          className="flex items-center justify-between p-2 border rounded"
+                        >
+                          <span>
+                            {item.data.toLocaleDateString('pt-BR')}
+                            {item.tipoCulto === 'domingoRDJ' ? ' (RDJ)' : item.tipoCulto === 'domingo' ? ' (Noite)' : ''}
                           </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                          <div className="flex gap-2">
+                            {item.voluntarios.map((voluntario, idx) => (
+                              <span key={`${key}-${voluntario.id}`}>
+                                {voluntario.nome}
+                                {idx < item.voluntarios.length - 1 ? ' | ' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                      return acc;
+                    }, [] as React.ReactElement[])}
                 </div>
               ) : (
                 <p className="text-muted-foreground">
