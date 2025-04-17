@@ -11,12 +11,14 @@ import {
   Timestamp,
   writeBatch,
   updateDoc,
+  getDoc,
 } from "firebase/firestore";
 
 interface Voluntario {
   id: string;
   nome: string;
   disponibilidades: {
+    domingoRDJ: boolean;
     domingo: boolean;
     segunda: boolean;
     terca: boolean;
@@ -44,6 +46,7 @@ interface EscalaItem {
 interface IgrejaFirebase {
   id: string;
   nome: string;
+  cultoDomingoRDJ: boolean;
   cultoDomingo: boolean;
   cultoSegunda: boolean;
   cultoTerca: boolean;
@@ -57,6 +60,14 @@ interface Igreja {
   id: string;
   nome: string;
   diasCulto: string[];
+  cultoDomingoRDJ?: boolean;
+  cultoDomingo?: boolean;
+  cultoSegunda?: boolean;
+  cultoTerca?: boolean;
+  cultoQuarta?: boolean;
+  cultoQuinta?: boolean;
+  cultoSexta?: boolean;
+  cultoSabado?: boolean;
 }
 
 interface Cargo {
@@ -71,6 +82,7 @@ export class EscalaService {
   ): Igreja {
     const diasCulto: string[] = [];
 
+    if (data.cultoDomingoRDJ) diasCulto.push("domingoRDJ");
     if (data.cultoDomingo) diasCulto.push("domingo");
     if (data.cultoSegunda) diasCulto.push("segunda");
     if (data.cultoTerca) diasCulto.push("terca");
@@ -83,6 +95,13 @@ export class EscalaService {
       id,
       nome: data.nome || "",
       diasCulto,
+      cultoDomingoRDJ: data.cultoDomingoRDJ || false,
+      cultoDomingo: data.cultoDomingo || false,
+      cultoSegunda: data.cultoSegunda || false,
+      cultoTerca: data.cultoTerca || false,
+      cultoQuarta: data.cultoQuarta || false,
+      cultoQuinta: data.cultoQuinta || false,
+      cultoSexta: data.cultoSexta || false,
     };
   }
 
@@ -90,6 +109,7 @@ export class EscalaService {
     diasCulto: string[]
   ): Partial<IgrejaFirebase> {
     return {
+      cultoDomingoRDJ: diasCulto.includes("domingoRDJ"),
       cultoDomingo: diasCulto.includes("domingo"),
       cultoSegunda: diasCulto.includes("segunda"),
       cultoTerca: diasCulto.includes("terca"),
@@ -129,8 +149,8 @@ export class EscalaService {
     );
   }
 
-  private static async getVoluntariosDisponiveis(
-    diaDaSemana: string,
+  static async getVoluntariosDisponiveis(
+    diaSemana: string,
     igrejaId: string,
     cargoId: string
   ): Promise<Voluntario[]> {
@@ -141,43 +161,27 @@ export class EscalaService {
       where("cargoId", "==", cargoId)
     );
 
-    console.log("Buscando voluntários:", { igrejaId, cargoId, diaDaSemana });
-    const snapshot = await getDocs(q);
-    console.log("Total de voluntários encontrados:", snapshot.docs.length);
+    const querySnapshot = await getDocs(q);
+    const voluntarios: Voluntario[] = [];
 
-    const voluntarios = snapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-        console.log("Dados do voluntário:", { id: doc.id, ...data });
-        return {
+    for (const doc of querySnapshot.docs) {
+      const data = doc.data();
+      const disponibilidades = data.disponibilidades || {};
+
+      // Verifica se o voluntário está disponível para o dia específico
+      const diaKey = diaSemana === "domingoRDJ" ? "domingoRDJ" : diaSemana;
+      if (disponibilidades[diaKey]) {
+        voluntarios.push({
           id: doc.id,
-          ...data,
+          nome: data.nome,
+          disponibilidades,
           diasTrabalhados: data.diasTrabalhados || 0,
           ultimaEscala: data.ultimaEscala ? data.ultimaEscala.toDate() : null,
-          disponibilidades: data.disponibilidades || {
-            domingo: false,
-            segunda: false,
-            terca: false,
-            quarta: false,
-            quinta: false,
-            sexta: false,
-            sabado: false,
-          },
-        } as Voluntario;
-      })
-      .filter((voluntario) => {
-        const disponivel =
-          voluntario.disponibilidades[
-            diaDaSemana as keyof typeof voluntario.disponibilidades
-          ];
-        console.log("Verificando disponibilidade:", {
-          voluntario: voluntario.nome,
-          diaDaSemana,
-          disponibilidades: voluntario.disponibilidades,
-          disponivel,
+          cargoId: data.cargoId,
+          igrejaId: data.igrejaId,
         });
-        return disponivel;
-      });
+      }
+    }
 
     return voluntarios;
   }
@@ -275,8 +279,6 @@ export class EscalaService {
     }
 
     const escala: EscalaItem[] = [];
-
-    // Mapa para controlar quantas vezes cada voluntário foi escalado
     const contagemEscalas: { [voluntarioId: string]: number } = {};
 
     // Ordena os dias para garantir que a distribuição seja feita cronologicamente
@@ -298,57 +300,73 @@ export class EscalaService {
       contagemEscalas[v.id] = 0;
     });
 
+    // Busca a igreja uma única vez
+    const igreja = await this.getIgrejaById(igrejaId);
+    if (!igreja) {
+      console.error("Igreja não encontrada:", igrejaId);
+      return [];
+    }
+
+    // Para cada dia, vamos buscar os voluntários disponíveis
     for (const dia of diasOrdenados) {
-      const diaDaSemana = this.getDiaDaSemana(dia);
-      console.log("Buscando voluntários para:", {
-        dia: dia.toLocaleDateString(),
+      const diaDaSemana = [
+        "domingo",
+        "segunda",
+        "terca",
+        "quarta",
+        "quinta",
+        "sexta",
+        "sabado",
+      ][dia.getDay()];
+
+      // Se for domingo, precisamos verificar se é RDJ ou normal
+      const diaParaBuscar =
+        diaDaSemana === "domingo" && igreja.cultoDomingoRDJ === true
+          ? "domingoRDJ"
+          : diaDaSemana;
+
+      console.log("Processando dia:", {
+        data: dia.toLocaleDateString(),
         diaDaSemana,
+        diaParaBuscar,
+        cultoDomingoRDJ: igreja.cultoDomingoRDJ,
       });
 
-      // Filtra os voluntários disponíveis para este dia específico
-      const voluntariosDisponiveis = todosVoluntarios.filter(
-        (v) =>
-          v.disponibilidades[diaDaSemana as keyof typeof v.disponibilidades]
+      // Busca os voluntários disponíveis para este dia específico
+      const voluntariosDisponiveis = await this.getVoluntariosDisponiveis(
+        diaParaBuscar,
+        igrejaId,
+        cargoId
       );
 
-      console.log(
-        "Voluntários disponíveis:",
-        voluntariosDisponiveis.map((v) => ({
-          nome: v.nome,
-          disponibilidades: v.disponibilidades,
-          vezesEscalado: contagemEscalas[v.id],
-        }))
-      );
+      console.log("Voluntários disponíveis:", {
+        dia: dia.toLocaleDateString(),
+        diaParaBuscar,
+        quantidade: voluntariosDisponiveis.length,
+        voluntarios: voluntariosDisponiveis.map((v) => v.nome),
+      });
 
-      // Precisamos de pelo menos 2 voluntários disponíveis
       if (voluntariosDisponiveis.length < 2) {
-        console.warn(
-          `Não há voluntários suficientes para ${diaDaSemana} (mínimo 2 necessários)`
+        console.log(
+          `Não há voluntários suficientes para o dia ${dia.toLocaleDateString()}`
         );
         continue;
       }
 
-      // Ordena voluntários por:
-      // 1. Menor número de vezes escalado no mês atual
-      // 2. Menor número total de dias trabalhados
-      // 3. Maior tempo desde a última escala
-      const voluntariosOrdenados = voluntariosDisponiveis.sort((a, b) => {
-        // Primeiro critério: número de vezes escalado no mês atual
-        const diffEscalasMes = contagemEscalas[a.id] - contagemEscalas[b.id];
-        if (diffEscalasMes !== 0) return diffEscalasMes;
+      // Ordena os voluntários por número de escalas e última data de trabalho
+      const voluntariosOrdenados = [...voluntariosDisponiveis].sort((a, b) => {
+        // Primeiro critério: número de escalas
+        const diferencaEscalas =
+          (contagemEscalas[a.id] || 0) - (contagemEscalas[b.id] || 0);
+        if (diferencaEscalas !== 0) return diferencaEscalas;
 
-        // Segundo critério: total de dias trabalhados
-        if (a.diasTrabalhados !== b.diasTrabalhados) {
-          return a.diasTrabalhados - b.diasTrabalhados;
-        }
-
-        // Terceiro critério: tempo desde a última escala
-        if (!a.ultimaEscala) return -1;
-        if (!b.ultimaEscala) return 1;
-        return a.ultimaEscala.getTime() - b.ultimaEscala.getTime();
+        // Segundo critério: última data de escala
+        const ultimaA = a.ultimaEscala ? a.ultimaEscala.getTime() : 0;
+        const ultimaB = b.ultimaEscala ? b.ultimaEscala.getTime() : 0;
+        return ultimaA - ultimaB;
       });
 
-      // Seleciona os 2 voluntários com menos escalas
+      // Seleciona os dois primeiros voluntários
       const voluntariosSelecionados = voluntariosOrdenados.slice(0, 2);
 
       // Atualiza o contador de escalas
@@ -356,15 +374,7 @@ export class EscalaService {
         contagemEscalas[v.id] = (contagemEscalas[v.id] || 0) + 1;
       });
 
-      console.log("Voluntários selecionados:", {
-        dia: dia.toLocaleDateString(),
-        voluntarios: voluntariosSelecionados.map((v) => ({
-          nome: v.nome,
-          vezesEscalado: contagemEscalas[v.id],
-        })),
-      });
-
-      // Adiciona os dois voluntários à mesma linha da escala
+      // Adiciona à escala
       escala.push({
         data: dia,
         voluntarios: voluntariosSelecionados.map((v) => ({
@@ -430,5 +440,28 @@ export class EscalaService {
     });
 
     await updateDoc(igrejaRef, dadosAtualizados);
+  }
+
+  // Método auxiliar para buscar igreja por ID
+  private static async getIgrejaById(id: string): Promise<Igreja | null> {
+    const igrejaRef = doc(db, "igrejas", id);
+    const igrejaDoc = await getDoc(igrejaRef);
+
+    if (!igrejaDoc.exists()) return null;
+
+    const data = igrejaDoc.data();
+    return {
+      id: igrejaDoc.id,
+      nome: data.nome,
+      diasCulto: data.diasCulto || [],
+      cultoDomingoRDJ: data.cultoDomingoRDJ || false,
+      cultoDomingo: data.cultoDomingo || false,
+      cultoSegunda: data.cultoSegunda || false,
+      cultoTerca: data.cultoTerca || false,
+      cultoQuarta: data.cultoQuarta || false,
+      cultoQuinta: data.cultoQuinta || false,
+      cultoSexta: data.cultoSexta || false,
+      cultoSabado: data.cultoSabado || false,
+    };
   }
 }

@@ -14,6 +14,14 @@ interface Igreja {
   id: string;
   nome: string;
   diasCulto: string[]; // ['domingo', 'quarta', 'sabado']
+  cultoDomingoRDJ?: boolean;
+  cultoDomingo?: boolean;
+  cultoSegunda?: boolean;
+  cultoTerca?: boolean;
+  cultoQuarta?: boolean;
+  cultoQuinta?: boolean;
+  cultoSexta?: boolean;
+  cultoSabado?: boolean;
 }
 
 interface Cargo {
@@ -113,14 +121,24 @@ export default function EscalasPage() {
     console.log('Gerando dias de culto para:', {
       mes: selectedMonth.getMonth() + 1,
       ano: selectedMonth.getFullYear(),
-      diasCultoConfigurados: igreja.diasCulto
+      diasCultoConfigurados: igreja.diasCulto,
+      cultoDomingoRDJ: igreja.cultoDomingoRDJ
     });
 
     for (let dia = 1; dia <= diasDoMes; dia++) {
       const data = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), dia);
       const diaDaSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'][data.getDay()];
 
-      if (igreja.diasCulto.includes(diaDaSemana)) {
+      // Se for domingo e a igreja tem culto RDJ, adiciona como domingoRDJ
+      if (diaDaSemana === 'domingo' && igreja.cultoDomingoRDJ === true) {
+        diasCultoDoMes.push(data);
+        console.log('Dia de culto RDJ encontrado:', {
+          data: data.toLocaleDateString(),
+          diaDaSemana: 'domingoRDJ'
+        });
+      }
+      // Para os outros dias, verifica normalmente
+      else if (igreja.diasCulto.includes(diaDaSemana)) {
         diasCultoDoMes.push(data);
         console.log('Dia de culto encontrado:', {
           data: data.toLocaleDateString(),

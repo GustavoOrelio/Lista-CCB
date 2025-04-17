@@ -9,6 +9,7 @@ import { EscalaService } from '@/app/services/escalaService';
 import { toast } from 'sonner';
 
 const diasSemana = [
+  { id: 'domingoRDJ', label: 'Domingo (RDJ)' },
   { id: 'domingo', label: 'Domingo' },
   { id: 'segunda', label: 'Segunda-feira' },
   { id: 'terca', label: 'Terça-feira' },
