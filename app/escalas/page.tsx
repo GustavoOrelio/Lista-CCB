@@ -7,6 +7,8 @@ import { Calendar } from '@/app/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { EscalaService } from '@/app/services/escalaService';
 import { toast } from 'sonner';
+import { exportService } from '../services/exportService';
+import { EscalaItem } from '../types/escala';
 
 interface Igreja {
   id: string;
@@ -17,11 +19,6 @@ interface Igreja {
 interface Cargo {
   id: string;
   nome: string;
-}
-
-interface EscalaItem {
-  data: Date;
-  voluntarios: { id: string; nome: string }[];
 }
 
 export default function EscalasPage() {
@@ -179,6 +176,31 @@ export default function EscalasPage() {
     setSelectedMonth(date);
   };
 
+  const handleExportarXLSX = () => {
+    if (escalaAtual.length === 0) {
+      toast.error('Não há escala para exportar');
+      return;
+    }
+
+    const igreja = igrejas.find(i => i.id === selectedIgreja);
+    const cargo = cargos.find(c => c.id === selectedCargo);
+
+    if (!igreja || !cargo) {
+      toast.error('Igreja ou cargo não encontrado');
+      return;
+    }
+
+    try {
+      exportService.exportarEscalaParaXLSX(escalaAtual, igreja.nome);
+      toast.success('Escala exportada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar escala:', error);
+      toast.error('Erro ao exportar escala', {
+        description: error instanceof Error ? error.message : 'Ocorreu um erro inesperado'
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">Geração de Escalas</h1>
@@ -291,7 +313,14 @@ export default function EscalasPage() {
         </Card>
       </div>
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex justify-end gap-2">
+        <Button
+          variant="outline"
+          onClick={handleExportarXLSX}
+          disabled={escalaAtual.length === 0}
+        >
+          Exportar XLSX
+        </Button>
         <Button
           onClick={handleGerarEscala}
           disabled={!selectedIgreja || !selectedCargo || isLoading}
