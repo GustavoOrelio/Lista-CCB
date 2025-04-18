@@ -3,11 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  UserGroupIcon,
   HomeIcon,
   UserPlusIcon,
-  ClipboardDocumentListIcon,
-  TruckIcon,
   BuildingOffice2Icon,
   BriefcaseIcon,
   CalendarDaysIcon,
@@ -18,10 +15,7 @@ const menuItems = [
   { name: 'Igrejas', href: '/igrejas', icon: BuildingOffice2Icon },
   { name: 'Voluntários', href: '/voluntarios', icon: UserPlusIcon },
   { name: 'Cargos', href: '/cargos', icon: BriefcaseIcon },
-  { name: 'Porteiros', href: '/porteiros', icon: UserGroupIcon },
   { name: 'Escalas', href: '/escalas', icon: CalendarDaysIcon },
-  { name: 'Pátio', href: '/patio', icon: TruckIcon },
-  { name: 'Coleta', href: '/coleta', icon: ClipboardDocumentListIcon },
 ];
 
 export default function Sidebar() {
