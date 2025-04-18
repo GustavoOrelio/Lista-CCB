@@ -233,7 +233,9 @@ export default function EscalasPage() {
     }
 
     try {
-      exportService.exportarEscalaParaXLSX(escalaAtual, igreja.nome);
+      // Verifica se o cargo é de porteiro
+      const isPorteiro = cargo.nome.toLowerCase().includes('porteiro');
+      exportService.exportarEscalaParaXLSX(escalaAtual, igreja.nome, isPorteiro);
       toast.success('Escala exportada com sucesso!');
     } catch (error) {
       console.error('Erro ao exportar escala:', error);
