@@ -5,6 +5,7 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 import { Voluntario } from '../types/voluntario';
 import { Igreja } from '../types/igreja';
 import { Cargo } from '../types/cargo';
+import { DiaSemana } from '../types/diaSemana';
 import { voluntarioService } from '../services/voluntarioService';
 import { igrejaService } from '../services/igrejaService';
 import { cargoService } from '../services/cargoService';
@@ -14,13 +15,6 @@ import { VoluntariosTable } from '../components/voluntarios/VoluntariosTable';
 import { VoluntarioForm } from '../components/voluntarios/VoluntarioForm';
 import { DeleteConfirmationDialog } from '../components/voluntarios/DeleteConfirmationDialog';
 import { toast } from 'sonner';
-
-type DiaSemana = {
-  id: keyof Voluntario['disponibilidades'];
-  key: keyof Voluntario['disponibilidades'];
-  label: string;
-  cultoProp: keyof Igreja;
-};
 
 const diasSemana: DiaSemana[] = [
   { id: 'domingoRDJ', key: 'domingoRDJ', label: 'Domingo (RDJ)', cultoProp: 'cultoDomingoRDJ' },

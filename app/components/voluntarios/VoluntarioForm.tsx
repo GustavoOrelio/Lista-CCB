@@ -1,6 +1,7 @@
 import { Voluntario } from "@/app/types/voluntario";
 import { Igreja } from "@/app/types/igreja";
 import { Cargo } from "@/app/types/cargo";
+import { DiaSemana } from "@/app/types/diaSemana";
 import { Input } from "@/app/components/ui/input";
 import {
   Select,
@@ -12,13 +13,6 @@ import {
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
-
-type DiaSemana = {
-  id: keyof Voluntario['disponibilidades'];
-  key: keyof Voluntario['disponibilidades'];
-  label: string;
-  cultoProp: keyof Igreja;
-};
 
 interface VoluntarioFormProps {
   voluntario: Omit<Voluntario, 'id'> & {
