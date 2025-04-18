@@ -127,12 +127,6 @@ export class EscalaService {
 
     return snapshot.docs.map((doc) => {
       const data = doc.data();
-      console.log("Dados da igreja:", {
-        id: doc.id,
-        nome: data.nome,
-        dadosCompletos: data,
-      });
-
       return this.convertFirebaseToIgreja(doc.id, data);
     });
   }
@@ -256,9 +250,6 @@ export class EscalaService {
 
     if (snapshot.docs.length > 0) {
       await batch.commit();
-      console.log(
-        `Escala antiga deletada: ${snapshot.docs.length} registros removidos`
-      );
     }
   }
 
@@ -267,8 +258,6 @@ export class EscalaService {
     igrejaId: string,
     cargoId: string
   ): Promise<EscalaItem[]> {
-    console.log("Iniciando geração de escala:", { dias, igrejaId, cargoId });
-
     // Deleta a escala antiga do mesmo mês
     if (dias.length > 0) {
       const primeiroDia = dias[0];
@@ -286,10 +275,6 @@ export class EscalaService {
 
     // Ordena os dias para garantir que a distribuição seja feita cronologicamente
     const diasOrdenados = [...dias].sort((a, b) => a.getTime() - b.getTime());
-    console.log(
-      "Dias ordenados:",
-      diasOrdenados.map((d) => d.toLocaleDateString())
-    );
 
     // Primeiro, vamos buscar todos os voluntários disponíveis para qualquer dia
     const todosVoluntarios = await this.getVoluntariosDisponiveis(
@@ -356,9 +341,6 @@ export class EscalaService {
         );
 
         if (voluntariosDisponiveis.length < 2) {
-          console.log(
-            `Não há voluntários suficientes para o dia ${dia.toLocaleDateString()} - ${tipoCulto}`
-          );
           continue;
         }
 
@@ -453,12 +435,6 @@ export class EscalaService {
   ): Promise<void> {
     const igrejaRef = doc(db, "igrejas", igrejaId);
     const dadosAtualizados = this.convertDiasCultoToFirebase(diasCulto);
-
-    console.log("Atualizando dias de culto:", {
-      igrejaId,
-      diasCulto,
-      dadosAtualizados,
-    });
 
     await updateDoc(igrejaRef, dadosAtualizados);
   }

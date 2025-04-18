@@ -110,7 +110,6 @@ export default function EscalasPage() {
     }
 
     const igreja = igrejas.find(i => i.id === selectedIgreja);
-    console.log('Igreja selecionada:', igreja);
 
     if (!igreja || !igreja.diasCulto || !Array.isArray(igreja.diasCulto)) {
       console.error('Igreja não encontrada ou dados inválidos:', {
@@ -129,14 +128,6 @@ export default function EscalasPage() {
     const diasDoMes = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0).getDate();
     const diasCultoDoMes: Date[] = [];
     const diasProcessados = new Set<string>();
-
-    console.log('Gerando dias de culto para:', {
-      mes: selectedMonth.getMonth() + 1,
-      ano: selectedMonth.getFullYear(),
-      diasCultoConfigurados: igreja.diasCulto,
-      cultoDomingoRDJ: igreja.cultoDomingoRDJ,
-      cultoDomingo: igreja.cultoDomingo
-    });
 
     for (let dia = 1; dia <= diasDoMes; dia++) {
       const data = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), dia);
@@ -171,7 +162,6 @@ export default function EscalasPage() {
       }
     }
 
-    console.log('Dias de culto gerados:', diasCultoDoMes.map(d => d.toLocaleDateString()));
     setDiasCulto(diasCultoDoMes);
   }, [selectedIgreja, selectedMonth, igrejas]);
 
