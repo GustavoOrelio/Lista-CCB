@@ -202,11 +202,33 @@ export default function Voluntarios() {
       .join(', ');
   };
 
+  const handleOpenModal = () => {
+    setNovoVoluntario({
+      nome: '',
+      igrejaId: '',
+      igrejaNome: '',
+      cargoId: '',
+      cargoNome: '',
+      disponibilidades: {
+        domingoRDJ: false,
+        domingo: false,
+        segunda: false,
+        terca: false,
+        quarta: false,
+        quinta: false,
+        sexta: false,
+        sabado: false,
+      },
+    });
+    setVoluntarioEmEdicao(null);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-semibold">Voluntários</h1>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <Button onClick={handleOpenModal}>
           <PlusIcon className="h-5 w-5 mr-2" />
           Adicionar Voluntário
         </Button>
@@ -219,7 +241,13 @@ export default function Voluntarios() {
         formatarDisponibilidades={formatarDisponibilidades}
       />
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={(open) => {
+        if (!open) {
+          handleCloseModal();
+        } else {
+          handleOpenModal();
+        }
+      }}>
         <DialogContent>
           <DialogTitle>
             {voluntarioEmEdicao ? 'Editar Voluntário' : 'Adicionar Novo Voluntário'}
