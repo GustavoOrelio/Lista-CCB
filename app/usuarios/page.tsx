@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/app/components/ui/button";
 import { toast } from "sonner";
-import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useRouter } from 'next/navigation';
 import { db } from '../config/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import NovoUsuarioDialog from './components/NovoUsuarioDialog';
+import EditarUsuarioDialog from './components/EditarUsuarioDialog';
+import ExcluirUsuarioDialog from './components/ExcluirUsuarioDialog';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface Usuario {
   id: string;
@@ -22,6 +24,10 @@ interface Usuario {
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState<Usuario | null>(null);
+  const [loading, setLoading] = useState(false);
   const { canManageUsers } = usePermissions();
   const router = useRouter();
 
@@ -49,6 +55,34 @@ export default function UsuariosPage() {
     }
   }
 
+  const handleEdit = (usuario: Usuario) => {
+    setUsuarioSelecionado(usuario);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (usuario: Usuario) => {
+    setUsuarioSelecionado(usuario);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!usuarioSelecionado) return;
+
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, 'usuarios', usuarioSelecionado.id));
+      setUsuarios(prev => prev.filter(u => u.id !== usuarioSelecionado.id));
+      toast.success('Usuário excluído com sucesso!');
+      setIsDeleteDialogOpen(false);
+      setUsuarioSelecionado(null);
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      toast.error('Erro ao excluir usuário. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!canManageUsers()) {
     return null;
   }
@@ -71,6 +105,7 @@ export default function UsuariosPage() {
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Igreja</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Cargo</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Tipo</th>
+              <th className="px-6 py-3 text-right text-sm font-medium text-gray-500">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -83,6 +118,24 @@ export default function UsuariosPage() {
                 <td className="px-6 py-4 text-sm">
                   {usuario.isAdmin ? 'Administrador' : 'Usuário'}
                 </td>
+                <td className="px-6 py-4 text-sm text-right">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEdit(usuario)}
+                    className="mr-2"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(usuario)}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -93,6 +146,20 @@ export default function UsuariosPage() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onUsuarioCriado={carregarUsuarios}
+      />
+
+      <EditarUsuarioDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onUsuarioAtualizado={carregarUsuarios}
+        usuario={usuarioSelecionado}
+      />
+
+      <ExcluirUsuarioDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        loading={loading}
       />
     </div>
   );
