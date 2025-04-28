@@ -19,10 +19,15 @@ export function usePermissions() {
     return isAdmin;
   };
 
+  const canManageIgrejas = () => {
+    return isAdmin;
+  };
+
   return {
     isAdmin,
     canAccessIgreja,
     canAccessCargo,
     canManageUsers,
+    canManageIgrejas,
   };
 }
