@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/componen
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { toast } from "sonner";
 import { db } from '../../config/firebase';
@@ -19,8 +18,8 @@ interface EditarUsuarioDialogProps {
     id: string;
     nome: string;
     email: string;
-    igreja: string;
-    cargo: string;
+    igrejas: string[];
+    cargos: string[];
     isAdmin: boolean;
   } | null;
 }
@@ -37,8 +36,8 @@ interface Cargo {
 
 export default function EditarUsuarioDialog({ open, onOpenChange, onUsuarioAtualizado, usuario }: EditarUsuarioDialogProps) {
   const [nome, setNome] = useState('');
-  const [igrejaId, setIgrejaId] = useState('');
-  const [cargoId, setCargoId] = useState('');
+  const [igrejasIds, setIgrejasIds] = useState<string[]>([]);
+  const [cargosIds, setCargosIds] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [igrejas, setIgrejas] = useState<Igreja[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
@@ -47,8 +46,8 @@ export default function EditarUsuarioDialog({ open, onOpenChange, onUsuarioAtual
   useEffect(() => {
     if (usuario) {
       setNome(usuario.nome);
-      setIgrejaId(usuario.igreja);
-      setCargoId(usuario.cargo);
+      setIgrejasIds(usuario.igrejas);
+      setCargosIds(usuario.cargos);
       setIsAdmin(usuario.isAdmin);
     }
   }, [usuario]);
@@ -98,8 +97,8 @@ export default function EditarUsuarioDialog({ open, onOpenChange, onUsuarioAtual
       const userRef = doc(db, 'usuarios', usuario.id);
       await updateDoc(userRef, {
         nome,
-        igreja: igrejaId,
-        cargo: cargoId,
+        igrejas: igrejasIds,
+        cargos: cargosIds,
         isAdmin
       });
 
@@ -142,34 +141,46 @@ export default function EditarUsuarioDialog({ open, onOpenChange, onUsuarioAtual
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="igreja">Igreja</Label>
-            <Select value={igrejaId} onValueChange={setIgrejaId} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma igreja" />
-              </SelectTrigger>
-              <SelectContent>
-                {igrejas.map((igreja) => (
-                  <SelectItem key={igreja.id} value={igreja.id}>
-                    {igreja.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Igrejas</Label>
+            <div className="border rounded-md p-4 space-y-2">
+              {igrejas.map((igreja) => (
+                <div key={igreja.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`igreja-${igreja.id}`}
+                    checked={igrejasIds.includes(igreja.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setIgrejasIds(prev => [...prev, igreja.id]);
+                      } else {
+                        setIgrejasIds(prev => prev.filter(id => id !== igreja.id));
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`igreja-${igreja.id}`}>{igreja.nome}</Label>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cargo">Cargo</Label>
-            <Select value={cargoId} onValueChange={setCargoId} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um cargo" />
-              </SelectTrigger>
-              <SelectContent>
-                {cargos.map((cargo) => (
-                  <SelectItem key={cargo.id} value={cargo.id}>
-                    {cargo.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Cargos</Label>
+            <div className="border rounded-md p-4 space-y-2">
+              {cargos.map((cargo) => (
+                <div key={cargo.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`cargo-${cargo.id}`}
+                    checked={cargosIds.includes(cargo.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setCargosIds(prev => [...prev, cargo.id]);
+                      } else {
+                        setCargosIds(prev => prev.filter(id => id !== cargo.id));
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`cargo-${cargo.id}`}>{cargo.nome}</Label>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox
