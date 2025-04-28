@@ -1,13 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 import {
   HomeIcon,
   UserPlusIcon,
   BuildingOffice2Icon,
   BriefcaseIcon,
   CalendarDaysIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 
 const menuItems = [
@@ -20,6 +23,18 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+      toast.success('Logout realizado com sucesso!');
+    } catch (_error) {
+      toast.error('Erro ao fazer logout.');
+    }
+  };
 
   return (
     <div className="flex h-screen w-64 flex-col fixed left-0 bg-white border-r border-gray-200">
@@ -48,6 +63,15 @@ export default function Sidebar() {
           );
         })}
       </nav>
+      <div className="border-t border-gray-200 p-4">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-all"
+        >
+          <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" aria-hidden="true" />
+          Sair
+        </button>
+      </div>
     </div>
   );
 } 
