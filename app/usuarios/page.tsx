@@ -16,8 +16,10 @@ interface Usuario {
   id: string;
   email: string;
   nome: string;
-  igreja: string;
-  cargo: string;
+  igrejas: string[];
+  igrejasNomes?: string[];
+  cargos: string[];
+  cargosNomes?: string[];
   isAdmin: boolean;
 }
 
@@ -44,10 +46,16 @@ export default function UsuariosPage() {
     try {
       const usuariosRef = collection(db, 'usuarios');
       const querySnapshot = await getDocs(usuariosRef);
-      const usuariosData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Usuario[];
+      const usuariosData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          // Garantir que igrejas e cargos sejam sempre arrays
+          igrejas: data.igrejas || [],
+          cargos: data.cargos || [],
+        };
+      }) as Usuario[];
       setUsuarios(usuariosData);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
@@ -102,8 +110,8 @@ export default function UsuariosPage() {
             <tr className="border-b">
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Nome</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Email</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Igreja</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Cargo</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Igrejas</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Cargos</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Tipo</th>
               <th className="px-6 py-3 text-right text-sm font-medium text-gray-500">Ações</th>
             </tr>
@@ -113,8 +121,8 @@ export default function UsuariosPage() {
               <tr key={usuario.id} className="border-b">
                 <td className="px-6 py-4 text-sm">{usuario.nome}</td>
                 <td className="px-6 py-4 text-sm">{usuario.email}</td>
-                <td className="px-6 py-4 text-sm">{usuario.igreja}</td>
-                <td className="px-6 py-4 text-sm">{usuario.cargo}</td>
+                <td className="px-6 py-4 text-sm">{usuario.igrejas.join(', ')}</td>
+                <td className="px-6 py-4 text-sm">{usuario.cargos.join(', ')}</td>
                 <td className="px-6 py-4 text-sm">
                   {usuario.isAdmin ? 'Administrador' : 'Usuário'}
                 </td>
