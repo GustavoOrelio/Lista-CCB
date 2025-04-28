@@ -11,6 +11,7 @@ import {
   BriefcaseIcon,
   CalendarDaysIcon,
   ArrowRightOnRectangleIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline';
 
 const menuItems = [
@@ -19,6 +20,7 @@ const menuItems = [
   { name: 'Voluntários', href: '/voluntarios', icon: UserPlusIcon },
   { name: 'Cargos', href: '/cargos', icon: BriefcaseIcon },
   { name: 'Escalas', href: '/escalas', icon: CalendarDaysIcon },
+  { name: 'Usuários', href: '/usuarios', icon: UsersIcon },
 ];
 
 export default function Sidebar() {
