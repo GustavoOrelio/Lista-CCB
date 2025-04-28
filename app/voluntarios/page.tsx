@@ -15,6 +15,8 @@ import { VoluntariosTable } from '../components/voluntarios/VoluntariosTable';
 import { VoluntarioForm } from '../components/voluntarios/VoluntarioForm';
 import { DeleteConfirmationDialog } from '../components/voluntarios/DeleteConfirmationDialog';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 
 const diasSemana: DiaSemana[] = [
   { id: 'domingoRDJ', key: 'domingoRDJ', label: 'Domingo (RDJ)', cultoProp: 'cultoDomingoRDJ' },
@@ -28,6 +30,8 @@ const diasSemana: DiaSemana[] = [
 ];
 
 export default function Voluntarios() {
+  const { userData } = useAuth();
+  const { isAdmin } = usePermissions();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [voluntarioParaExcluir, setVoluntarioParaExcluir] = useState<string | null>(null);
@@ -57,12 +61,17 @@ export default function Voluntarios() {
 
   useEffect(() => {
     carregarDados();
-  }, []);
+  }, [userData?.igreja, userData?.cargo]);
 
   const carregarDados = async () => {
     try {
+      const filtros = !isAdmin ? {
+        igrejaId: userData?.igreja,
+        cargoId: userData?.cargo,
+      } : undefined;
+
       const [dadosVoluntarios, dadosIgrejas, dadosCargos] = await Promise.all([
-        voluntarioService.listar(),
+        voluntarioService.listar(filtros),
         igrejaService.listar(),
         cargoService.listar()
       ]);
