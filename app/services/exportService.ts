@@ -1,8 +1,10 @@
 import * as XLSX from "xlsx";
 import { EscalaItem } from "../types/escala";
+import { voluntarioService } from "./voluntarioService";
+import { Voluntario } from "../types/voluntario";
 
 export const exportService = {
-  exportarEscalaParaXLSX(
+  async exportarEscalaParaXLSX(
     escala: EscalaItem[],
     nomeIgreja: string,
     isPorteiro: boolean
@@ -80,30 +82,58 @@ export const exportService = {
     XLSX.writeFile(wb, nomeArquivo);
   },
 
-  exportarEscalaColetaXLSX(escala: EscalaItem[], nomeIgreja: string) {
+  async exportarEscalaColetaXLSX(escala: EscalaItem[], nomeIgreja: string) {
     // Criar o cabeçalho
     const cabecalho = [
       ["CONGREGAÇÃO CRISTÃ NO BRASIL"],
-      [`${nomeIgreja.toUpperCase()}`],
+      ["RODÍZIO ESCRITURAÇÃO CENTRAL"],
       [""], // Linha em branco
       ["DATA", "IRMÃOS RESPONSÁVEL"],
     ];
 
+    // Buscar todos os voluntários escalados
+    const voluntariosIds = new Set(
+      escala.flatMap((item) => item.voluntarios.map((v) => v.id))
+    );
+    const todosVoluntarios = await voluntarioService.listar();
+    const voluntariosMap = new Map(
+      todosVoluntarios
+        .filter((v) => voluntariosIds.has(v.id))
+        .map((v) => [v.id, v])
+    );
+
     // Formatar os dados da escala
-    const dadosEscala = escala.map((item) => [
-      item.data.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: undefined,
-      }) +
-        " - " +
-        this.getDiaSemana(item.data) +
-        (item.tipoCulto === "domingoRDJ" ? " (RDJ)" : ""),
-      item.voluntarios.map((v) => v.nome).join(" e "),
-    ]);
+    const dadosEscala = escala.map((item) => {
+      const data = item.data;
+      const diaFormatado = `${data.getDate().toString().padStart(2, "0")}/${(
+        data.getMonth() + 1
+      )
+        .toString()
+        .padStart(2, "0")}`;
+      const diaSemana = this.getDiaSemanaAbreviado(data);
+      const isRDJ = diaSemana === "RDJ";
+
+      return [
+        `${diaFormatado} - ${this.getDiaSemana(data)}${isRDJ ? " (RDJ)" : ""}`,
+        item.voluntarios.map((v) => v.nome).join(", "),
+      ];
+    });
+
+    // Criar lista de contatos dos voluntários escalados
+    const contatosOrdenados = Array.from(voluntariosMap.values())
+      .sort((a, b) => a.nome.localeCompare(b.nome))
+      .map((v) => [v.nome, v.telefone]);
+
+    // Adicionar espaço entre a escala e os contatos
+    const espacamento = [[""], [""]];
 
     // Combinar todos os dados
-    const todosOsDados = [...cabecalho, ...dadosEscala];
+    const todosOsDados = [
+      ...cabecalho,
+      ...dadosEscala,
+      ...espacamento,
+      ...contatosOrdenados,
+    ];
 
     // Criar a planilha
     const ws = XLSX.utils.aoa_to_sheet(todosOsDados);
@@ -111,14 +141,14 @@ export const exportService = {
     // Configurar estilos
     const mergeRanges = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }, // Congregação
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } }, // Nome da Igreja
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } }, // Rodízio Escrituração
     ];
 
     ws["!merges"] = mergeRanges;
 
     // Ajustar largura das colunas
     ws["!cols"] = [
-      { wch: 20 }, // Data
+      { wch: 25 }, // Data
       { wch: 35 }, // Irmãos
     ];
 
