@@ -1,6 +1,7 @@
 export interface Voluntario {
   id: string;
   nome: string;
+  telefone: string;
   igrejaId: string;
   igrejaNome: string;
   cargoId: string;

@@ -10,7 +10,7 @@ import { voluntarioService } from '../services/voluntarioService';
 import { igrejaService } from '../services/igrejaService';
 import { cargoService } from '../services/cargoService';
 import { Button } from '@/app/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/app/components/ui/dialog';
 import { VoluntariosTable } from '../components/voluntarios/VoluntariosTable';
 import { VoluntarioForm } from '../components/voluntarios/VoluntarioForm';
 import { DeleteConfirmationDialog } from '../components/voluntarios/DeleteConfirmationDialog';
@@ -43,6 +43,7 @@ export default function Voluntarios() {
     disponibilidades: NonNullable<Voluntario['disponibilidades']>;
   }>({
     nome: '',
+    telefone: '',
     igrejaId: '',
     igrejaNome: '',
     cargoId: '',
@@ -109,6 +110,7 @@ export default function Voluntarios() {
   const handleCloseModal = () => {
     setNovoVoluntario({
       nome: '',
+      telefone: '',
       igrejaId: '',
       igrejaNome: '',
       cargoId: '',
@@ -164,6 +166,7 @@ export default function Voluntarios() {
     setVoluntarioEmEdicao(voluntario);
     setNovoVoluntario({
       nome: voluntario.nome,
+      telefone: voluntario.telefone,
       igrejaId: voluntario.igrejaId,
       igrejaNome: voluntario.igrejaNome,
       cargoId: voluntario.cargoId,
@@ -214,6 +217,7 @@ export default function Voluntarios() {
   const handleOpenModal = () => {
     setNovoVoluntario({
       nome: '',
+      telefone: '',
       igrejaId: '',
       igrejaNome: '',
       cargoId: '',
@@ -257,10 +261,15 @@ export default function Voluntarios() {
           handleOpenModal();
         }
       }}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogTitle>
             {voluntarioEmEdicao ? 'Editar Voluntário' : 'Adicionar Novo Voluntário'}
           </DialogTitle>
+          <DialogDescription>
+            {voluntarioEmEdicao
+              ? 'Edite as informações do voluntário abaixo.'
+              : 'Preencha as informações do novo voluntário abaixo.'}
+          </DialogDescription>
           <VoluntarioForm
             voluntario={novoVoluntario}
             igrejas={igrejas}

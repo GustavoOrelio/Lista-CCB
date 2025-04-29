@@ -133,6 +133,7 @@ export function VoluntariosTable({
                       <TableHeader>
                         <TableRow>
                           <TableHead>Nome</TableHead>
+                          <TableHead>Telefone</TableHead>
                           <TableHead>Disponibilidade</TableHead>
                           <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
@@ -141,6 +142,7 @@ export function VoluntariosTable({
                         {cargo.voluntarios.map((voluntario) => (
                           <TableRow key={voluntario.id}>
                             <TableCell className="font-medium">{voluntario.nome}</TableCell>
+                            <TableCell>{voluntario.telefone}</TableCell>
                             <TableCell>{formatarDisponibilidades(voluntario.disponibilidades)}</TableCell>
                             <TableCell className="text-right">
                               <Button

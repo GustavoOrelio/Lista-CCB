@@ -14,6 +14,14 @@ import { Checkbox } from "@/app/components/ui/checkbox";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 
+const formatarTelefone = (value: string) => {
+  const numeros = value.replace(/\D/g, '').slice(0, 11);
+  if (!numeros) return '';
+  if (numeros.length <= 2) return numeros;
+  if (numeros.length <= 7) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+  return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
+};
+
 interface VoluntarioFormProps {
   voluntario: Omit<Voluntario, 'id'> & {
     disponibilidades: NonNullable<Voluntario['disponibilidades']>;
@@ -45,6 +53,11 @@ export function VoluntarioForm({
 }: VoluntarioFormProps) {
   const igreja = igrejas.find(i => i.id === voluntario.igrejaId);
 
+  const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const telefoneFormatado = formatarTelefone(e.target.value);
+    onChange({ ...voluntario, telefone: telefoneFormatado });
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -55,6 +68,18 @@ export function VoluntarioForm({
           onChange={(e) =>
             onChange({ ...voluntario, nome: e.target.value })
           }
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="telefone">Telefone</Label>
+        <Input
+          id="telefone"
+          type="tel"
+          value={voluntario.telefone || ''}
+          onChange={handleTelefoneChange}
+          placeholder="(00) 00000-0000"
           required
         />
       </div>
