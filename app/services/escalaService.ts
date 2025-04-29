@@ -1,17 +1,16 @@
 import { db } from "@/app/firebase/firebase";
 import {
   collection,
-  getDocs,
-  addDoc,
+  doc,
+  writeBatch,
+  Timestamp,
+  increment,
   query,
   where,
-  orderBy,
-  doc,
-  increment,
-  Timestamp,
-  writeBatch,
+  getDocs,
   updateDoc,
   getDoc,
+  deleteDoc,
 } from "firebase/firestore";
 
 interface Voluntario {
@@ -74,6 +73,22 @@ interface Igreja {
 interface Cargo {
   id: string;
   nome: string;
+}
+
+interface EscalaMensal {
+  mes: number;
+  ano: number;
+  igrejaId: string;
+  cargoId: string;
+  criadoEm: Timestamp;
+  dias: {
+    data: Timestamp;
+    tipoCulto: string;
+    voluntarios: {
+      id: string;
+      nome: string;
+    }[];
+  }[];
 }
 
 export class EscalaService {
@@ -195,28 +210,63 @@ export class EscalaService {
   }
 
   private static async salvarEscala(escala: EscalaItem[]) {
+    if (escala.length === 0) return;
+
     const escalaRef = collection(db, "escalas");
     const batch = writeBatch(db);
 
-    // Salva a escala
-    for (const item of escala) {
-      await addDoc(escalaRef, {
-        data: Timestamp.fromDate(item.data),
-        voluntarios: item.voluntarios,
-        igrejaId: item.igrejaId,
-        cargoId: item.cargoId,
-        tipoCulto: item.tipoCulto,
-        criadoEm: Timestamp.fromDate(new Date()),
-      });
+    // Agrupa as escalas por mês
+    const escalasPorMes = escala.reduce<Record<string, EscalaMensal>>(
+      (acc, item) => {
+        const mes = item.data.getMonth();
+        const ano = item.data.getFullYear();
+        const chave = `${ano}-${mes}`;
+
+        if (!acc[chave]) {
+          acc[chave] = {
+            mes,
+            ano,
+            igrejaId: item.igrejaId,
+            cargoId: item.cargoId,
+            criadoEm: Timestamp.fromDate(new Date()),
+            dias: [],
+          };
+        }
+
+        acc[chave].dias.push({
+          data: Timestamp.fromDate(item.data),
+          tipoCulto: item.tipoCulto,
+          voluntarios: item.voluntarios,
+        });
+
+        return acc;
+      },
+      {}
+    );
+
+    // Salva cada mês como um documento separado
+    for (const escalaMensal of Object.values(escalasPorMes)) {
+      const docRef = doc(
+        escalaRef,
+        `${escalaMensal.igrejaId}-${escalaMensal.cargoId}-${escalaMensal.ano}-${escalaMensal.mes}`
+      );
+      batch.set(docRef, escalaMensal);
 
       // Atualiza as estatísticas dos voluntários
-      for (const voluntario of item.voluntarios) {
-        const voluntarioRef = doc(db, "voluntarios", voluntario.id);
-        batch.update(voluntarioRef, {
-          diasTrabalhados: increment(1),
-          ultimaEscala: Timestamp.fromDate(item.data),
+      const voluntariosProcessados = new Set<string>();
+
+      escalaMensal.dias.forEach((dia) => {
+        dia.voluntarios.forEach((voluntario) => {
+          if (!voluntariosProcessados.has(voluntario.id)) {
+            const voluntarioRef = doc(db, "voluntarios", voluntario.id);
+            batch.update(voluntarioRef, {
+              diasTrabalhados: increment(1),
+              ultimaEscala: dia.data,
+            });
+            voluntariosProcessados.add(voluntario.id);
+          }
         });
-      }
+      });
     }
 
     await batch.commit();
@@ -229,27 +279,13 @@ export class EscalaService {
     cargoId: string
   ) {
     const escalaRef = collection(db, "escalas");
-    const inicio = new Date(ano, mes, 1);
-    const fim = new Date(ano, mes + 1, 0);
+    const docId = `${igrejaId}-${cargoId}-${ano}-${mes}`;
+    const docRef = doc(escalaRef, docId);
 
-    const q = query(
-      escalaRef,
-      where("igrejaId", "==", igrejaId),
-      where("cargoId", "==", cargoId),
-      where("data", ">=", Timestamp.fromDate(inicio)),
-      where("data", "<=", Timestamp.fromDate(fim))
-    );
-
-    const snapshot = await getDocs(q);
-    const batch = writeBatch(db);
-
-    // Deleta todos os documentos da escala antiga
-    snapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-
-    if (snapshot.docs.length > 0) {
-      await batch.commit();
+    try {
+      await deleteDoc(docRef);
+    } catch {
+      console.log("Nenhuma escala anterior encontrada para deletar");
     }
   }
 
@@ -403,30 +439,28 @@ export class EscalaService {
     cargoId: string
   ): Promise<EscalaItem[]> {
     const escalaRef = collection(db, "escalas");
-    const inicio = new Date(ano, mes, 1);
-    const fim = new Date(ano, mes + 1, 0);
+    const docId = `${igrejaId}-${cargoId}-${ano}-${mes}`;
+    const docRef = doc(escalaRef, docId);
 
-    const q = query(
-      escalaRef,
-      where("igrejaId", "==", igrejaId),
-      where("cargoId", "==", cargoId),
-      where("data", ">=", Timestamp.fromDate(inicio)),
-      where("data", "<=", Timestamp.fromDate(fim)),
-      orderBy("data", "asc")
-    );
+    const docSnap = await getDoc(docRef);
 
-    const snapshot = await getDocs(q);
+    if (!docSnap.exists()) {
+      return [];
+    }
 
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        data: data.data.toDate(),
-        voluntarios: data.voluntarios,
+    const data = docSnap.data() as EscalaMensal;
+
+    return data.dias
+      .map((dia) => ({
+        data: dia.data.toDate(),
+        voluntarios: dia.voluntarios,
         igrejaId: data.igrejaId,
         cargoId: data.cargoId,
-        tipoCulto: data.tipoCulto || "domingo",
-      };
-    });
+        tipoCulto: dia.tipoCulto,
+      }))
+      .sort(
+        (a: EscalaItem, b: EscalaItem) => a.data.getTime() - b.data.getTime()
+      );
   }
 
   static async atualizarDiasCultoIgreja(
