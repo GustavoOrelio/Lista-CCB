@@ -235,6 +235,33 @@ export default function EscalasPage() {
     }
   };
 
+  const handleExportarPDF = async () => {
+    if (escalaAtual.length === 0) {
+      toast.error('Não há escala para exportar');
+      return;
+    }
+
+    const igreja = igrejas.find(i => i.id === selectedIgreja);
+    const cargo = cargos.find(c => c.id === selectedCargo);
+
+    if (!igreja || !cargo) {
+      toast.error('Igreja ou cargo não encontrado');
+      return;
+    }
+
+    try {
+      // Verifica se o cargo é de porteiro
+      const isPorteiro = cargo.nome.toLowerCase().includes('porteiro');
+      await exportService.exportarEscalaParaXLSX(escalaAtual, igreja.nome, isPorteiro, 'pdf');
+      toast.success('PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar PDF', {
+        description: error instanceof Error ? error.message : 'Ocorreu um erro inesperado'
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">Geração de Escalas</h1>
@@ -371,13 +398,20 @@ export default function EscalasPage() {
         </Card>
       </div>
 
-      <div className="mt-6 flex justify-end gap-2">
+      <div className="flex gap-4 mt-6">
         <Button
           variant="outline"
           onClick={handleExportarXLSX}
           disabled={escalaAtual.length === 0}
         >
           Exportar XLSX
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleExportarPDF}
+          disabled={escalaAtual.length === 0}
+        >
+          Exportar PDF
         </Button>
         <Button
           onClick={handleGerarEscala}
