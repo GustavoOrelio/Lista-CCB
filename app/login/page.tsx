@@ -8,11 +8,13 @@ import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { toast } from "sonner";
+import ResetPasswordDialog from '../components/ResetPasswordDialog';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const { login, user } = useAuth();
   const router = useRouter();
 
@@ -71,6 +73,13 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setResetPasswordOpen(true)}
+                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                Esqueceu a senha?
+              </button>
             </div>
             <Button
               type="submit"
@@ -82,6 +91,10 @@ export default function LoginPage() {
           </form>
         </CardContent>
       </Card>
+      <ResetPasswordDialog
+        open={resetPasswordOpen}
+        onOpenChange={setResetPasswordOpen}
+      />
     </div>
   );
 } 

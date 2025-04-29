@@ -5,10 +5,11 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  User
+  User,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 interface UserData {
   uid: string;
@@ -25,6 +26,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -94,12 +96,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function resetPassword(email: string) {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      console.error('Erro ao enviar email de recuperação:', error);
+      throw error;
+    }
+  }
+
   const value = {
     user,
     userData,
     loading,
     login,
-    logout
+    logout,
+    resetPassword
   };
 
   return (
