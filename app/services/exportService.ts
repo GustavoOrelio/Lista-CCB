@@ -266,7 +266,11 @@ export const exportService = {
           textColor: [0, 0, 0],
           fontStyle: "bold",
         },
-        styles: { fontSize: 10, cellPadding: 2 },
+        styles: {
+          fontSize: 10,
+          cellPadding: 2,
+          textColor: [0, 0, 0],
+        },
         columnStyles: {
           0: { cellWidth: 60 },
           1: { cellWidth: 100 },
@@ -288,7 +292,11 @@ export const exportService = {
         startY: finalY + 20,
         body: contatosOrdenados,
         theme: "grid",
-        styles: { fontSize: 10, cellPadding: 2 },
+        styles: {
+          fontSize: 10,
+          cellPadding: 2,
+          textColor: [0, 0, 0],
+        },
         columnStyles: {
           0: { cellWidth: 60 },
           1: { cellWidth: 50 },
