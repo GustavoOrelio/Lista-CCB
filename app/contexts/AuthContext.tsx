@@ -98,7 +98,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function resetPassword(email: string) {
     try {
-      await sendPasswordResetEmail(auth, email);
+      const actionCodeSettings = {
+        url: window.location.origin + '/login', // Redireciona de volta para a página de login
+        handleCodeInApp: false
+      };
+      await sendPasswordResetEmail(auth, email, actionCodeSettings);
     } catch (error) {
       console.error('Erro ao enviar email de recuperação:', error);
       throw error;
