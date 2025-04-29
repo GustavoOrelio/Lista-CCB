@@ -208,7 +208,7 @@ export default function EscalasPage() {
     setSelectedMonth(date);
   };
 
-  const handleExportarXLSX = () => {
+  const handleExportarXLSX = async () => {
     if (escalaAtual.length === 0) {
       toast.error('Não há escala para exportar');
       return;
@@ -225,7 +225,7 @@ export default function EscalasPage() {
     try {
       // Verifica se o cargo é de porteiro
       const isPorteiro = cargo.nome.toLowerCase().includes('porteiro');
-      exportService.exportarEscalaParaXLSX(escalaAtual, igreja.nome, isPorteiro);
+      await exportService.exportarEscalaParaXLSX(escalaAtual, igreja.nome, isPorteiro);
       toast.success('Escala exportada com sucesso!');
     } catch (error) {
       console.error('Erro ao exportar escala:', error);

@@ -39,7 +39,7 @@ export const exportService = {
     formato: "xlsx" | "pdf" = "xlsx"
   ) {
     if (isPorteiro) {
-      return this.exportarEscalaPorteirosXLSX(escala, nomeIgreja);
+      return await this.exportarEscalaPorteirosXLSX(escala, nomeIgreja);
     } else {
       if (formato === "pdf") {
         return this.exportarEscalaColetaPDF(escala, nomeIgreja);
@@ -49,7 +49,7 @@ export const exportService = {
     }
   },
 
-  exportarEscalaPorteirosXLSX(escala: EscalaItem[], nomeIgreja: string) {
+  async exportarEscalaPorteirosXLSX(escala: EscalaItem[], nomeIgreja: string) {
     // Pegar o mês e ano da primeira data da escala
     const cabecalhoMesAno = escala[0]?.data
       .toLocaleDateString("pt-BR", {
@@ -79,8 +79,30 @@ export const exportService = {
       ];
     });
 
+    // Buscar todos os voluntários escalados
+    const voluntariosIds = new Set(
+      escala.flatMap((item) => item.voluntarios.map((v) => v.id))
+    );
+    const todosVoluntarios = await voluntarioService.listar();
+    const voluntariosMap = new Map(
+      todosVoluntarios
+        .filter((v) => voluntariosIds.has(v.id))
+        .map((v) => [v.id, v])
+    );
+
+    // Criar lista de contatos dos voluntários escalados
+    const espacamento = [[""], [""]];
+    const contatosOrdenados = Array.from(voluntariosMap.values())
+      .sort((a, b) => a.nome.localeCompare(b.nome))
+      .map((v) => [v.nome, v.telefone]);
+
     // Combinar todos os dados
-    const todosOsDados = [...cabecalho, ...dadosEscala];
+    const todosOsDados = [
+      ...cabecalho,
+      ...dadosEscala,
+      ...espacamento,
+      ...contatosOrdenados,
+    ];
 
     // Criar a planilha
     const ws = XLSX.utils.aoa_to_sheet(todosOsDados);
@@ -95,7 +117,7 @@ export const exportService = {
 
     // Ajustar largura das colunas
     ws["!cols"] = [
-      { wch: 12 }, // Data
+      { wch: 25 }, // Data
       { wch: 20 }, // Pedido
       { wch: 20 }, // Ab.Igreja
     ];
