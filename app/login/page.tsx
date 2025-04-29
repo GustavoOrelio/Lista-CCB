@@ -73,13 +73,15 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <button
-                type="button"
-                onClick={() => setResetPasswordOpen(true)}
-                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                Esqueceu a senha?
-              </button>
+              <div className="flex justify-center mt-2">
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordOpen(true)}
+                  className="text-sm text-black hover:text-gray-700 underline transition-colors"
+                >
+                  Esqueceu sua senha?
+                </button>
+              </div>
             </div>
             <Button
               type="submit"
