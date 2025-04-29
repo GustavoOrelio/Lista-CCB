@@ -398,7 +398,7 @@ export default function EscalasPage() {
         </Card>
       </div>
 
-      <div className="flex gap-4 mt-6">
+      <div className="flex gap-4 mt-6 justify-end">
         <Button
           variant="outline"
           onClick={handleExportarXLSX}
