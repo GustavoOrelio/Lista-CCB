@@ -1,18 +1,51 @@
 import * as XLSX from "xlsx";
 import { EscalaItem } from "../types/escala";
 import { voluntarioService } from "./voluntarioService";
-import { Voluntario } from "../types/voluntario";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { RowInput } from "jspdf-autotable";
+
+// Estende o tipo jsPDF para incluir autoTable
+declare module "jspdf" {
+  interface jsPDF {
+    autoTable: (options: {
+      startY: number;
+      head?: string[][];
+      body: string[][];
+      theme: string;
+      headStyles?: {
+        fillColor: number[];
+        textColor: number[];
+        fontStyle: string;
+      };
+      styles?: {
+        fontSize: number;
+        cellPadding: number;
+      };
+      columnStyles?: {
+        [key: number]: {
+          cellWidth: number;
+        };
+      };
+    }) => { finalY: number };
+  }
+}
 
 export const exportService = {
   async exportarEscalaParaXLSX(
     escala: EscalaItem[],
     nomeIgreja: string,
-    isPorteiro: boolean
+    isPorteiro: boolean,
+    formato: "xlsx" | "pdf" = "xlsx"
   ) {
     if (isPorteiro) {
       return this.exportarEscalaPorteirosXLSX(escala, nomeIgreja);
     } else {
-      return this.exportarEscalaColetaXLSX(escala, nomeIgreja);
+      if (formato === "pdf") {
+        return this.exportarEscalaColetaPDF(escala, nomeIgreja);
+      } else {
+        return this.exportarEscalaColetaXLSX(escala, nomeIgreja);
+      }
     }
   },
 
@@ -165,6 +198,118 @@ export const exportService = {
 
     // Gerar o arquivo
     XLSX.writeFile(wb, nomeArquivo);
+  },
+
+  async exportarEscalaColetaPDF(escala: EscalaItem[], nomeIgreja: string) {
+    // Buscar todos os voluntários escalados
+    const voluntariosIds = new Set(
+      escala.flatMap((item) => item.voluntarios.map((v) => v.id))
+    );
+    const todosVoluntarios = await voluntarioService.listar();
+    const voluntariosMap = new Map(
+      todosVoluntarios
+        .filter((v) => voluntariosIds.has(v.id))
+        .map((v) => [v.id, v])
+    );
+
+    // Criar o PDF
+    const doc = new jsPDF();
+    autoTable(doc, {
+      /* configuração inicial vazia */
+    }); // Inicializa o plugin
+
+    // Configurar fonte e tamanho
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+
+    // Adicionar cabeçalho
+    doc.text(
+      "CONGREGAÇÃO CRISTÃ NO BRASIL",
+      doc.internal.pageSize.width / 2,
+      15,
+      { align: "center" }
+    );
+    doc.text(
+      "RODÍZIO ESCRITURAÇÃO CENTRAL",
+      doc.internal.pageSize.width / 2,
+      22,
+      { align: "center" }
+    );
+
+    // Preparar dados da escala
+    const dadosEscala = escala.map((item) => {
+      const data = item.data;
+      const diaFormatado = `${data.getDate().toString().padStart(2, "0")}/${(
+        data.getMonth() + 1
+      )
+        .toString()
+        .padStart(2, "0")}`;
+      const diaSemana = this.getDiaSemanaAbreviado(data);
+      const isRDJ = diaSemana === "RDJ";
+
+      return [
+        `${diaFormatado} - ${this.getDiaSemana(data)}${isRDJ ? " (RDJ)" : ""}`,
+        item.voluntarios.map((v) => v.nome).join(", "),
+      ] as RowInput;
+    });
+
+    try {
+      // Adicionar tabela da escala
+      let finalY = 30;
+      autoTable(doc, {
+        startY: finalY,
+        head: [["DATA", "IRMÃOS RESPONSÁVEL"]],
+        body: dadosEscala,
+        theme: "grid",
+        headStyles: {
+          fillColor: [200, 200, 200],
+          textColor: [0, 0, 0],
+          fontStyle: "bold",
+        },
+        styles: { fontSize: 10, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 60 },
+          1: { cellWidth: 100 },
+        },
+        didDrawPage: (data) => {
+          if (data.cursor) {
+            finalY = data.cursor.y;
+          }
+        },
+      });
+
+      // Preparar lista de contatos
+      const contatosOrdenados = Array.from(voluntariosMap.values())
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+        .map((v) => [v.nome, v.telefone] as RowInput);
+
+      // Adicionar tabela de contatos com espaçamento fixo
+      autoTable(doc, {
+        startY: finalY + 20,
+        body: contatosOrdenados,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 60 },
+          1: { cellWidth: 50 },
+        },
+      });
+
+      // Nome do arquivo
+      const mesAno = escala[0]?.data.toLocaleDateString("pt-BR", {
+        month: "long",
+        year: "numeric",
+      });
+      const nomeArquivo = `Escala ${nomeIgreja} - ${mesAno}.pdf`;
+
+      // Salvar o PDF
+      doc.save(nomeArquivo);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      throw new Error(
+        "Não foi possível gerar o PDF. Por favor, tente novamente."
+      );
+    }
   },
 
   getDiaSemana(data: Date): string {
