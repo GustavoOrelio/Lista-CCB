@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { Igreja } from '../types/igreja';
 import { igrejaService } from '../services/igrejaService';
 import { Button } from '@/app/components/ui/button';
@@ -9,6 +9,10 @@ import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Checkbox } from '@/app/components/ui/checkbox';
+import { Badge } from '@/app/components/ui/badge';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/app/components/ui/hover-card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/app/components/ui/tooltip';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { toast } from 'sonner';
 import {
   Table,
@@ -48,6 +52,7 @@ export default function Igrejas() {
     cultoSexta: false,
     cultoSabado: false,
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     carregarIgrejas();
@@ -55,11 +60,14 @@ export default function Igrejas() {
 
   const carregarIgrejas = async () => {
     try {
+      setIsLoading(true);
       const dados = await igrejaService.listar();
       setIgrejas(dados);
     } catch (error) {
       console.error('Erro ao carregar igrejas:', error);
       toast.error('Erro ao carregar igrejas. Por favor, tente novamente.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -136,60 +144,131 @@ export default function Igrejas() {
     }
   };
 
-  const formatarDiasCulto = (igreja: Igreja) => {
-    return diasCulto
-      .filter(dia => igreja[dia.key])
-      .map(dia => dia.label)
-      .join(', ');
+  const getDiasCultoAgrupados = (igreja: Igreja) => {
+    const grupos = {
+      domingo: diasCulto
+        .filter(dia => dia.key.includes('domingo') && igreja[dia.key])
+        .map(dia => dia.label),
+      semanais: diasCulto
+        .filter(dia => !dia.key.includes('domingo') && igreja[dia.key])
+        .map(dia => dia.label),
+    };
+
+    return grupos;
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold">Igrejas</h1>
+    <div className="p-4 sm:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl font-bold">Igrejas</h1>
         <Button onClick={() => setIsModalOpen(true)}>
           <PlusIcon className="h-5 w-5 mr-2" />
           Adicionar Igreja
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Dias de Culto</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {igrejas.map((igreja) => (
-              <TableRow key={igreja.id}>
-                <TableCell className="font-medium">{igreja.nome}</TableCell>
-                <TableCell>{formatarDiasCulto(igreja)}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(igreja)}
-                    className="mr-2"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(igreja.id)}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+      {isLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : (
+        <div className="rounded-md border shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Dias de Culto</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {igrejas.map((igreja) => {
+                const diasAgrupados = getDiasCultoAgrupados(igreja);
+                return (
+                  <TableRow key={igreja.id}>
+                    <TableCell className="font-medium">{igreja.nome}</TableCell>
+                    <TableCell>
+                      <HoverCard>
+                        <HoverCardTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8">
+                            <CalendarIcon className="h-4 w-4 mr-2" />
+                            Ver dias de culto
+                          </Button>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-80">
+                          <div className="space-y-4">
+                            {diasAgrupados.domingo.length > 0 && (
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-semibold">Domingos:</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {diasAgrupados.domingo.map(dia => (
+                                    <Badge key={dia} variant="default">
+                                      {dia}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {diasAgrupados.semanais.length > 0 && (
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-semibold">Durante a semana:</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {diasAgrupados.semanais.map(dia => (
+                                    <Badge key={dia} variant="secondary">
+                                      {dia}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(igreja)}
+                              className="mr-2"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar igreja</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(igreja.id)}
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Excluir igreja</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
@@ -197,22 +276,23 @@ export default function Igrejas() {
             {igrejaEmEdicao ? 'Editar Igreja' : 'Adicionar Nova Igreja'}
           </DialogTitle>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome da Igreja</Label>
               <Input
                 id="nome"
                 value={novaIgreja.nome}
                 onChange={(e) => setNovaIgreja(prev => ({ ...prev, nome: e.target.value }))}
+                placeholder="Digite o nome da igreja"
                 required
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Dias de Culto</Label>
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {diasCulto.map(dia => (
-                  <div key={dia.key} className="flex items-center space-x-2">
+                  <div key={dia.key} className="flex items-center space-x-2 p-2 rounded-lg border">
                     <Checkbox
                       id={`culto-${dia.key}`}
                       checked={novaIgreja[dia.key]}
@@ -220,7 +300,12 @@ export default function Igrejas() {
                         setNovaIgreja(prev => ({ ...prev, [dia.key]: checked as boolean }))
                       }
                     />
-                    <Label htmlFor={`culto-${dia.key}`}>{dia.label}</Label>
+                    <Label
+                      htmlFor={`culto-${dia.key}`}
+                      className="flex-1 cursor-pointer"
+                    >
+                      {dia.label}
+                    </Label>
                   </div>
                 ))}
               </div>
