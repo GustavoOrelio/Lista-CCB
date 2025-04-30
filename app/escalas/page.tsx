@@ -347,45 +347,71 @@ export default function EscalasPage() {
           <CardContent>
             <div className="space-y-4">
               {escalaAtual.length > 0 ? (
-                <div className="space-y-2">
-                  {escalaAtual
-                    .sort((a, b) => {
-                      // Primeiro ordena por data
-                      const dateCompare = a.data.getTime() - b.data.getTime();
-                      if (dateCompare !== 0) return dateCompare;
+                <>
+                  <div className="space-y-2">
+                    {escalaAtual
+                      .sort((a, b) => {
+                        // Primeiro ordena por data
+                        const dateCompare = a.data.getTime() - b.data.getTime();
+                        if (dateCompare !== 0) return dateCompare;
 
-                      // Se for mesmo dia, RDJ vem antes de domingo
-                      if (a.tipoCulto === 'domingoRDJ' && b.tipoCulto === 'domingo') return -1;
-                      if (a.tipoCulto === 'domingo' && b.tipoCulto === 'domingoRDJ') return 1;
-                      return 0;
-                    })
-                    .reduce((acc, item, index) => {
-                      // Cria um identificador único baseado na data e tipo de culto
-                      const dateStr = item.data.toISOString().split('T')[0];
-                      const key = `${dateStr}-${item.tipoCulto}-${index}`;
+                        // Se for mesmo dia, RDJ vem antes de domingo
+                        if (a.tipoCulto === 'domingoRDJ' && b.tipoCulto === 'domingo') return -1;
+                        if (a.tipoCulto === 'domingo' && b.tipoCulto === 'domingoRDJ') return 1;
+                        return 0;
+                      })
+                      .reduce((acc, item, index) => {
+                        // Cria um identificador único baseado na data e tipo de culto
+                        const dateStr = item.data.toISOString().split('T')[0];
+                        const key = `${dateStr}-${item.tipoCulto}-${index}`;
 
-                      acc.push(
-                        <div
-                          key={key}
-                          className="flex items-center justify-between p-2 border rounded"
-                        >
-                          <span>
-                            {item.data.toLocaleDateString('pt-BR')}
-                            {item.tipoCulto === 'domingoRDJ' ? ' (RDJ)' : ''}
-                          </span>
-                          <div className="flex gap-2">
-                            {item.voluntarios.map((voluntario, idx) => (
-                              <span key={`${key}-${voluntario.id}`}>
-                                {voluntario.nome}
-                                {idx < item.voluntarios.length - 1 ? ' | ' : ''}
-                              </span>
-                            ))}
+                        acc.push(
+                          <div
+                            key={key}
+                            className="flex items-center justify-between p-2 border rounded"
+                          >
+                            <span>
+                              {item.data.toLocaleDateString('pt-BR')}
+                              {item.tipoCulto === 'domingoRDJ' ? ' (RDJ)' : ''}
+                            </span>
+                            <div className="flex gap-2">
+                              {item.voluntarios.map((voluntario, idx) => (
+                                <span key={`${key}-${voluntario.id}`}>
+                                  {voluntario.nome}
+                                  {idx < item.voluntarios.length - 1 ? ' | ' : ''}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      );
-                      return acc;
-                    }, [] as React.ReactElement[])}
-                </div>
+                        );
+                        return acc;
+                      }, [] as React.ReactElement[])}
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t">
+                    <h3 className="text-sm font-medium mb-2">Resumo do Mês</h3>
+                    <div className="space-y-2">
+                      {Object.entries(
+                        escalaAtual.reduce((acc, item) => {
+                          item.voluntarios.forEach((vol) => {
+                            acc[vol.nome] = (acc[vol.nome] || 0) + 1;
+                          });
+                          return acc;
+                        }, {} as Record<string, number>)
+                      )
+                        .sort(([nomeA], [nomeB]) => nomeA.localeCompare(nomeB))
+                        .map(([nome, quantidade]) => (
+                          <div
+                            key={nome}
+                            className="flex justify-between items-center p-2 bg-muted rounded"
+                          >
+                            <span>{nome}</span>
+                            <span className="font-medium">{quantidade} cultos</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </>
               ) : (
                 <p className="text-muted-foreground">
                   {selectedIgreja && selectedCargo
