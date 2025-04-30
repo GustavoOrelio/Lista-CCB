@@ -3,12 +3,15 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/app/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Card, CardContent } from '@/app/components/ui/card';
 import { Calendar } from '@/app/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { EscalaService } from '@/app/services/escalaService';
 import { toast } from 'sonner';
 import { exportService } from '../services/exportService';
+import { FileText, Calendar as CalendarIcon, Table } from 'lucide-react';
 
 interface EscalaItem {
   data: Date;
@@ -49,11 +52,14 @@ export default function EscalasPage() {
   const [diasCulto, setDiasCulto] = useState<Date[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [escalaAtual, setEscalaAtual] = useState<EscalaItem[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('calendario');
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Carregar igrejas e cargos
   useEffect(() => {
     const carregarDados = async () => {
       try {
+        setIsInitialLoading(true);
         const [igrejasData, cargosData] = await Promise.all([
           EscalaService.getIgrejas(),
           EscalaService.getCargos()
@@ -65,6 +71,8 @@ export default function EscalasPage() {
         toast.error('Erro ao carregar dados', {
           description: 'Não foi possível carregar as igrejas e cargos'
         });
+      } finally {
+        setIsInitialLoading(false);
       }
     };
     carregarDados();
@@ -263,189 +271,175 @@ export default function EscalasPage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Geração de Escalas</h1>
+    <div className="p-4 sm:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl font-bold">Escalas</h1>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExportarXLSX}
+            disabled={escalaAtual.length === 0 || isLoading}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Exportar XLSX
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportarPDF}
+            disabled={escalaAtual.length === 0 || isLoading}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Exportar PDF
+          </Button>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Configuração</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Igreja</label>
-                <Select onValueChange={setSelectedIgreja} value={selectedIgreja}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a igreja" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {igrejas.map((igreja) => (
-                      <SelectItem key={igreja.id} value={igreja.id}>
-                        {igreja.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Cargo</label>
-                <Select onValueChange={setSelectedCargo} value={selectedCargo}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o cargo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cargos.map((cargo) => (
-                      <SelectItem key={cargo.id} value={cargo.id}>
-                        {cargo.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Mês de Referência</label>
-                <Select onValueChange={handleMonthSelect} defaultValue={selectedMonth.getMonth().toString()}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o mês" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 12 }, (_, i) => {
-                      const date = new Date();
-                      date.setMonth(i);
-                      return (
-                        <SelectItem key={i} value={i.toString()}>
-                          {date.toLocaleString('pt-BR', { month: 'long' })}
+      {isInitialLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-[400px] w-full" />
+        </div>
+      ) : (
+        <>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Igreja</label>
+                  <Select value={selectedIgreja} onValueChange={setSelectedIgreja}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma igreja" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {igrejas.map((igreja) => (
+                        <SelectItem key={igreja.id} value={igreja.id}>
+                          {igreja.nome}
                         </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Cargo</label>
+                  <Select value={selectedCargo} onValueChange={setSelectedCargo}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cargo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cargos.map((cargo) => (
+                        <SelectItem key={cargo.id} value={cargo.id}>
+                          {cargo.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Mês</label>
+                  <Select
+                    value={selectedMonth.getMonth().toString()}
+                    onValueChange={handleMonthSelect}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <SelectItem key={i} value={i.toString()}>
+                          {new Date(0, i).toLocaleString('default', { month: 'long' })}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {selectedIgreja && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium mb-2">Dias de Culto</h3>
-                  <Calendar
-                    mode="multiple"
-                    selected={diasCulto}
-                    className="rounded-md border"
-                    disabled
-                  />
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              <div className="mt-6 flex justify-center">
+                <Button
+                  onClick={handleGerarEscala}
+                  disabled={!selectedIgreja || !selectedCargo || isLoading}
+                  className="w-full sm:w-auto"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin mr-2">⏳</div>
+                      Gerando Escala...
+                    </>
+                  ) : (
+                    'Gerar Escala'
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Escala Atual</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {escalaAtual.length > 0 ? (
-                <>
-                  <div className="space-y-2">
-                    {escalaAtual
-                      .sort((a, b) => {
-                        // Primeiro ordena por data
-                        const dateCompare = a.data.getTime() - b.data.getTime();
-                        if (dateCompare !== 0) return dateCompare;
+          {selectedIgreja && selectedCargo && (
+            <Card>
+              <CardContent className="pt-6">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="calendario" className="flex items-center">
+                      <CalendarIcon className="w-4 h-4 mr-2" />
+                      Calendário
+                    </TabsTrigger>
+                    <TabsTrigger value="lista" className="flex items-center">
+                      <Table className="w-4 h-4 mr-2" />
+                      Lista
+                    </TabsTrigger>
+                  </TabsList>
 
-                        // Se for mesmo dia, RDJ vem antes de domingo
-                        if (a.tipoCulto === 'domingoRDJ' && b.tipoCulto === 'domingo') return -1;
-                        if (a.tipoCulto === 'domingo' && b.tipoCulto === 'domingoRDJ') return 1;
-                        return 0;
-                      })
-                      .reduce((acc, item, index) => {
-                        // Cria um identificador único baseado na data e tipo de culto
-                        const dateStr = item.data.toISOString().split('T')[0];
-                        const key = `${dateStr}-${item.tipoCulto}-${index}`;
+                  <TabsContent value="calendario" className="mt-4">
+                    <Calendar
+                      mode="multiple"
+                      selected={diasCulto}
+                      className="rounded-md border mx-auto"
+                      disabled={(date) => !diasCulto.some(d => d.toDateString() === date.toDateString())}
+                      modifiers={{
+                        escala: escalaAtual.map(e => e.data)
+                      }}
+                      modifiersStyles={{
+                        escala: { backgroundColor: 'var(--primary)', color: 'white' }
+                      }}
+                    />
+                  </TabsContent>
 
-                        acc.push(
-                          <div
-                            key={key}
-                            className="flex items-center justify-between p-2 border rounded"
-                          >
-                            <span>
-                              {item.data.toLocaleDateString('pt-BR')}
-                              {item.tipoCulto === 'domingoRDJ' ? ' (RDJ)' : ''}
-                            </span>
-                            <div className="flex gap-2">
-                              {item.voluntarios.map((voluntario, idx) => (
-                                <span key={`${key}-${voluntario.id}`}>
-                                  {voluntario.nome}
-                                  {idx < item.voluntarios.length - 1 ? ' | ' : ''}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                        return acc;
-                      }, [] as React.ReactElement[])}
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t">
-                    <h3 className="text-sm font-medium mb-2">Resumo do Mês</h3>
-                    <div className="space-y-2">
-                      {Object.entries(
-                        escalaAtual.reduce((acc, item) => {
-                          item.voluntarios.forEach((vol) => {
-                            acc[vol.nome] = (acc[vol.nome] || 0) + 1;
-                          });
-                          return acc;
-                        }, {} as Record<string, number>)
-                      )
-                        .sort(([nomeA], [nomeB]) => nomeA.localeCompare(nomeB))
-                        .map(([nome, quantidade]) => (
-                          <div
-                            key={nome}
-                            className="flex justify-between items-center p-2 bg-muted rounded"
-                          >
-                            <span>{nome}</span>
-                            <span className="font-medium">{quantidade} cultos</span>
-                          </div>
-                        ))}
+                  <TabsContent value="lista" className="mt-4">
+                    <div className="rounded-md border">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="px-4 py-2 text-left">Data</th>
+                            <th className="px-4 py-2 text-left">Horário</th>
+                            <th className="px-4 py-2 text-left">Voluntários</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {escalaAtual.map((item, index) => (
+                            <tr key={index} className="border-b">
+                              <td className="px-4 py-2">
+                                {item.data.toLocaleDateString()}
+                              </td>
+                              <td className="px-4 py-2">
+                                {item.data.getHours()}:00
+                              </td>
+                              <td className="px-4 py-2">
+                                {item.voluntarios.map(v => v.nome).join(', ')}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
-                </>
-              ) : (
-                <p className="text-muted-foreground">
-                  {selectedIgreja && selectedCargo
-                    ? 'Nenhuma escala gerada para este mês'
-                    : 'Selecione uma igreja e um cargo para visualizar a escala'}
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex gap-4 mt-6 justify-end">
-        <Button
-          variant="outline"
-          onClick={handleExportarXLSX}
-          disabled={escalaAtual.length === 0}
-        >
-          Exportar XLSX
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleExportarPDF}
-          disabled={escalaAtual.length === 0}
-        >
-          Exportar PDF
-        </Button>
-        <Button
-          onClick={handleGerarEscala}
-          disabled={!selectedIgreja || !selectedCargo || isLoading}
-        >
-          {isLoading ? 'Gerando...' : 'Gerar Escala'}
-        </Button>
-      </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 } 
