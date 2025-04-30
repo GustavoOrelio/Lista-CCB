@@ -39,7 +39,11 @@ export const exportService = {
     formato: "xlsx" | "pdf" = "xlsx"
   ) {
     if (isPorteiro) {
-      return await this.exportarEscalaPorteirosXLSX(escala, nomeIgreja);
+      if (formato === "pdf") {
+        return this.exportarEscalaPorteirosPDF(escala, nomeIgreja);
+      } else {
+        return await this.exportarEscalaPorteirosXLSX(escala, nomeIgreja);
+      }
     } else {
       if (formato === "pdf") {
         return this.exportarEscalaColetaPDF(escala, nomeIgreja);
@@ -322,6 +326,123 @@ export const exportService = {
         columnStyles: {
           0: { cellWidth: 60 },
           1: { cellWidth: 50 },
+        },
+      });
+
+      // Nome do arquivo
+      const mesAno = escala[0]?.data.toLocaleDateString("pt-BR", {
+        month: "long",
+        year: "numeric",
+      });
+      const nomeArquivo = `Escala ${nomeIgreja} - ${mesAno}.pdf`;
+
+      // Salvar o PDF
+      doc.save(nomeArquivo);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      throw new Error(
+        "Não foi possível gerar o PDF. Por favor, tente novamente."
+      );
+    }
+  },
+
+  async exportarEscalaPorteirosPDF(escala: EscalaItem[], nomeIgreja: string) {
+    // Buscar todos os voluntários escalados
+    const voluntariosIds = new Set(
+      escala.flatMap((item) => item.voluntarios.map((v) => v.id))
+    );
+    const todosVoluntarios = await voluntarioService.listar();
+    const voluntariosMap = new Map(
+      todosVoluntarios
+        .filter((v) => voluntariosIds.has(v.id))
+        .map((v) => [v.id, v])
+    );
+
+    // Criar o PDF
+    const doc = new jsPDF();
+
+    // Configurar fonte e tamanho
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+
+    // Adicionar cabeçalho
+    doc.text(nomeIgreja.toUpperCase(), doc.internal.pageSize.width / 2, 15, {
+      align: "center",
+    });
+
+    // Pegar o mês e ano da primeira data da escala
+    const cabecalhoMesAno = escala[0]?.data
+      .toLocaleDateString("pt-BR", {
+        month: "long",
+        year: "numeric",
+      })
+      .toUpperCase();
+
+    doc.text(cabecalhoMesAno, doc.internal.pageSize.width / 2, 22, {
+      align: "center",
+    });
+
+    // Preparar dados da escala
+    const dadosEscala = escala.map((item) => {
+      const data = item.data;
+      const diaSemana = this.getDiaSemana(data);
+      return [
+        `${data.getDate().toString().padStart(2, "0")}/${(data.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")} ${diaSemana}`,
+        item.voluntarios[0]?.nome || "",
+        item.voluntarios[1]?.nome || "",
+      ] as RowInput;
+    });
+
+    try {
+      // Adicionar tabela da escala
+      let finalY = 30;
+      autoTable(doc, {
+        startY: finalY,
+        head: [["DATA", "PEDIDO", "AB.IGREJA"]],
+        body: dadosEscala,
+        theme: "grid",
+        headStyles: {
+          fillColor: [200, 200, 200],
+          textColor: [0, 0, 0],
+          fontStyle: "bold",
+        },
+        styles: {
+          fontSize: 10,
+          cellPadding: 2,
+          textColor: [0, 0, 0],
+        },
+        columnStyles: {
+          0: { cellWidth: 60 },
+          1: { cellWidth: 65 },
+          2: { cellWidth: 65 },
+        },
+        didDrawPage: (data) => {
+          if (data.cursor) {
+            finalY = data.cursor.y;
+          }
+        },
+      });
+
+      // Preparar lista de contatos
+      const contatosOrdenados = Array.from(voluntariosMap.values())
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+        .map((v) => [v.nome, v.telefone] as RowInput);
+
+      // Adicionar tabela de contatos com espaçamento fixo
+      autoTable(doc, {
+        startY: finalY + 20,
+        body: contatosOrdenados,
+        theme: "grid",
+        styles: {
+          fontSize: 10,
+          cellPadding: 2,
+          textColor: [0, 0, 0],
+        },
+        columnStyles: {
+          0: { cellWidth: 90 },
+          1: { cellWidth: 70 },
         },
       });
 
