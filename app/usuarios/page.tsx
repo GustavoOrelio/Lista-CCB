@@ -23,8 +23,11 @@ interface Usuario {
   isAdmin: boolean;
 }
 
+
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [igrejas, setIgrejas] = useState<Map<string, string>>(new Map());
+  const [cargos, setCargos] = useState<Map<string, string>>(new Map());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -39,27 +42,46 @@ export default function UsuariosPage() {
       toast.error('Você não tem permissão para acessar esta página.');
       return;
     }
-    carregarUsuarios();
+    carregarDados();
   }, [canManageUsers, router]);
 
-  async function carregarUsuarios() {
+  async function carregarDados() {
     try {
+      // Carregar igrejas
+      const igrejasRef = collection(db, 'igrejas');
+      const igrejasSnapshot = await getDocs(igrejasRef);
+      const igrejasMap = new Map<string, string>();
+      igrejasSnapshot.docs.forEach(doc => {
+        igrejasMap.set(doc.id, doc.data().nome);
+      });
+      setIgrejas(igrejasMap);
+
+      // Carregar cargos
+      const cargosRef = collection(db, 'cargos');
+      const cargosSnapshot = await getDocs(cargosRef);
+      const cargosMap = new Map<string, string>();
+      cargosSnapshot.docs.forEach(doc => {
+        cargosMap.set(doc.id, doc.data().nome);
+      });
+      setCargos(cargosMap);
+
+      // Carregar usuários
       const usuariosRef = collection(db, 'usuarios');
-      const querySnapshot = await getDocs(usuariosRef);
-      const usuariosData = querySnapshot.docs.map(doc => {
+      const usuariosSnapshot = await getDocs(usuariosRef);
+      const usuariosData = usuariosSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
           ...data,
-          // Garantir que igrejas e cargos sejam sempre arrays
           igrejas: data.igrejas || [],
           cargos: data.cargos || [],
         };
       }) as Usuario[];
+
       setUsuarios(usuariosData);
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
-      toast.error('Erro ao carregar usuários.');
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados.');
     }
   }
 
@@ -91,6 +113,9 @@ export default function UsuariosPage() {
     }
   };
 
+  const getNomeIgreja = (id: string) => igrejas.get(id) || id;
+  const getNomeCargo = (id: string) => cargos.get(id) || id;
+
   if (!canManageUsers()) {
     return null;
   }
@@ -121,8 +146,12 @@ export default function UsuariosPage() {
               <tr key={usuario.id} className="border-b">
                 <td className="px-6 py-4 text-sm">{usuario.nome}</td>
                 <td className="px-6 py-4 text-sm">{usuario.email}</td>
-                <td className="px-6 py-4 text-sm">{usuario.igrejas.join(', ')}</td>
-                <td className="px-6 py-4 text-sm">{usuario.cargos.join(', ')}</td>
+                <td className="px-6 py-4 text-sm">
+                  {usuario.igrejas.map(id => getNomeIgreja(id)).join(', ')}
+                </td>
+                <td className="px-6 py-4 text-sm">
+                  {usuario.cargos.map(id => getNomeCargo(id)).join(', ')}
+                </td>
                 <td className="px-6 py-4 text-sm">
                   {usuario.isAdmin ? 'Administrador' : 'Usuário'}
                 </td>
@@ -153,13 +182,13 @@ export default function UsuariosPage() {
       <NovoUsuarioDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        onUsuarioCriado={carregarUsuarios}
+        onUsuarioCriado={carregarDados}
       />
 
       <EditarUsuarioDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        onUsuarioAtualizado={carregarUsuarios}
+        onUsuarioAtualizado={carregarDados}
         usuario={usuarioSelecionado}
       />
 
