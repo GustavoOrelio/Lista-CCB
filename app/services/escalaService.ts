@@ -307,6 +307,8 @@ export class EscalaService {
 
     const escala: EscalaItem[] = [];
     const contagemEscalas: { [voluntarioId: string]: number } = {};
+    const contagemPedido: { [voluntarioId: string]: number } = {};
+    const contagemAbrirIgreja: { [voluntarioId: string]: number } = {};
     const diasProcessados = new Set<string>();
 
     // Ordena os dias para garantir que a distribuição seja feita cronologicamente
@@ -319,9 +321,11 @@ export class EscalaService {
       cargoId
     );
 
-    // Inicializa o contador para todos os voluntários
+    // Inicializa os contadores para todos os voluntários
     todosVoluntarios.forEach((v) => {
       contagemEscalas[v.id] = 0;
+      contagemPedido[v.id] = 0;
+      contagemAbrirIgreja[v.id] = 0;
     });
 
     // Busca a igreja uma única vez
@@ -398,8 +402,34 @@ export class EscalaService {
         // Seleciona os dois primeiros voluntários
         const voluntariosSelecionados = voluntariosOrdenados.slice(0, 2);
 
-        // Atualiza o contador de escalas
-        voluntariosSelecionados.forEach((v) => {
+        // Determina quem vai fazer cada função baseado no histórico
+        let voluntariosOrganizados = [...voluntariosSelecionados];
+
+        // Verifica quem tem mais pedidos e mais aberturas
+        const v1PedidoCount = contagemPedido[voluntariosOrganizados[0].id] || 0;
+        const v1AbrirCount =
+          contagemAbrirIgreja[voluntariosOrganizados[0].id] || 0;
+        const v2PedidoCount = contagemPedido[voluntariosOrganizados[1].id] || 0;
+        const v2AbrirCount =
+          contagemAbrirIgreja[voluntariosOrganizados[1].id] || 0;
+
+        // Se o primeiro voluntário tem mais pedidos que aberturas, ele vai abrir
+        // Ou se o segundo tem mais aberturas que pedidos, o primeiro vai pedir
+        if (v1PedidoCount > v1AbrirCount || v2AbrirCount > v2PedidoCount) {
+          voluntariosOrganizados = [
+            voluntariosOrganizados[1],
+            voluntariosOrganizados[0],
+          ];
+        }
+
+        // Atualiza os contadores
+        contagemPedido[voluntariosOrganizados[0].id] =
+          (contagemPedido[voluntariosOrganizados[0].id] || 0) + 1;
+        contagemAbrirIgreja[voluntariosOrganizados[1].id] =
+          (contagemAbrirIgreja[voluntariosOrganizados[1].id] || 0) + 1;
+
+        // Atualiza o contador geral de escalas
+        voluntariosOrganizados.forEach((v) => {
           contagemEscalas[v.id] = (contagemEscalas[v.id] || 0) + 1;
         });
 
@@ -413,7 +443,7 @@ export class EscalaService {
 
         escala.push({
           data: novaData,
-          voluntarios: voluntariosSelecionados.map((v) => ({
+          voluntarios: voluntariosOrganizados.map((v) => ({
             id: v.id,
             nome: v.nome,
           })),
