@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { Cargo } from '../types/cargo';
 import { cargoService } from '../services/cargoService';
 import { Button } from '@/app/components/ui/button';
@@ -10,6 +10,10 @@ import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { Textarea } from '@/app/components/ui/textarea';
+import { Badge } from '@/app/components/ui/badge';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/app/components/ui/hover-card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/app/components/ui/tooltip';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { toast } from 'sonner';
 import {
   Table,
@@ -32,6 +36,7 @@ export default function Cargos() {
     descricao: '',
     ativo: true,
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     carregarCargos();
@@ -39,11 +44,14 @@ export default function Cargos() {
 
   const carregarCargos = async () => {
     try {
+      setIsLoading(true);
       const dados = await cargoService.listar();
       setCargos(dados);
     } catch (error) {
       console.error('Erro ao carregar cargos:', error);
       toast.error('Erro ao carregar cargos. Por favor, tente novamente.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -109,61 +117,103 @@ export default function Cargos() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold">Cargos</h1>
+    <div className="p-4 sm:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl font-bold">Cargos</h1>
         <Button onClick={() => setIsModalOpen(true)}>
           <PlusIcon className="h-5 w-5 mr-2" />
           Adicionar Cargo
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cargos.map((cargo) => (
-              <TableRow key={cargo.id}>
-                <TableCell className="font-medium">{cargo.nome}</TableCell>
-                <TableCell>{cargo.descricao}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${cargo.ativo
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                    }`}>
-                    {cargo.ativo ? 'Ativo' : 'Inativo'}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(cargo)}
-                    className="mr-2"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(cargo.id)}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+      {isLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : (
+        <div className="rounded-md border shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {cargos.map((cargo) => (
+                <TableRow key={cargo.id}>
+                  <TableCell className="font-medium">{cargo.nome}</TableCell>
+                  <TableCell>
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8">
+                          <InformationCircleIcon className="h-4 w-4 mr-2" />
+                          Ver descrição
+                        </Button>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-80">
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-semibold">Descrição do cargo:</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {cargo.descricao || "Nenhuma descrição disponível"}
+                          </p>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={cargo.ativo ? "default" : "destructive"}
+                      className="font-medium"
+                    >
+                      {cargo.ativo ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(cargo)}
+                            className="mr-2"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Editar cargo</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(cargo.id)}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Excluir cargo</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
@@ -171,13 +221,14 @@ export default function Cargos() {
             {cargoEmEdicao ? 'Editar Cargo' : 'Adicionar Novo Cargo'}
           </DialogTitle>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome do Cargo</Label>
               <Input
                 id="nome"
                 value={novoCargo.nome}
                 onChange={(e) => setNovoCargo(prev => ({ ...prev, nome: e.target.value }))}
+                placeholder="Digite o nome do cargo"
                 required
               />
             </div>
@@ -188,11 +239,13 @@ export default function Cargos() {
                 id="descricao"
                 value={novoCargo.descricao}
                 onChange={(e) => setNovoCargo(prev => ({ ...prev, descricao: e.target.value }))}
+                placeholder="Descreva as responsabilidades e atribuições do cargo"
+                className="min-h-[100px]"
                 required
               />
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 p-2 rounded-lg border">
               <Checkbox
                 id="ativo"
                 checked={novoCargo.ativo}
@@ -200,7 +253,9 @@ export default function Cargos() {
                   setNovoCargo(prev => ({ ...prev, ativo: checked as boolean }))
                 }
               />
-              <Label htmlFor="ativo">Cargo Ativo</Label>
+              <Label htmlFor="ativo" className="flex-1 cursor-pointer">
+                Cargo Ativo
+              </Label>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
