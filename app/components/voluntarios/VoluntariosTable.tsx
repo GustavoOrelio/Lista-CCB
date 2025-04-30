@@ -8,14 +8,16 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import { Button } from "@/app/components/ui/button";
-import { PencilIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { Badge } from "@/app/components/ui/badge";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/app/components/ui/hover-card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
+import { PencilIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon, PhoneIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 
 interface VoluntariosTableProps {
   voluntarios: Voluntario[];
   onEdit: (voluntario: Voluntario) => void;
   onDelete: (id: string) => void;
-  formatarDisponibilidades: (disponibilidades: Voluntario['disponibilidades']) => string;
 }
 
 interface VoluntariosAgrupados {
@@ -34,7 +36,6 @@ export function VoluntariosTable({
   voluntarios,
   onEdit,
   onDelete,
-  formatarDisponibilidades,
 }: VoluntariosTableProps) {
   const [expandedIgrejas, setExpandedIgrejas] = useState<Set<string>>(new Set());
   const [expandedCargos, setExpandedCargos] = useState<Set<string>>(new Set());
@@ -89,9 +90,9 @@ export function VoluntariosTable({
   return (
     <div className="space-y-4">
       {Object.entries(voluntariosAgrupados).map(([igrejaId, igreja]) => (
-        <div key={igrejaId} className="rounded-md border">
+        <div key={igrejaId} className="rounded-md border shadow-sm">
           <button
-            className="w-full bg-muted p-4 flex items-center justify-between hover:bg-muted/80 transition-colors"
+            className="w-full bg-muted p-4 flex items-center justify-between hover:bg-muted/80 transition-colors rounded-t-md"
             onClick={() => toggleIgreja(igrejaId)}
           >
             <h2 className="text-lg font-semibold flex items-center">
@@ -101,9 +102,9 @@ export function VoluntariosTable({
                 <ChevronRightIcon className="h-5 w-5 mr-2" />
               )}
               {igreja.igrejaNome}
-              <span className="ml-2 text-sm text-muted-foreground">
-                ({Object.values(igreja.cargos).reduce((total, cargo) => total + cargo.voluntarios.length, 0)} voluntários)
-              </span>
+              <Badge variant="secondary" className="ml-3">
+                {Object.values(igreja.cargos).reduce((total, cargo) => total + cargo.voluntarios.length, 0)} voluntários
+              </Badge>
             </h2>
           </button>
 
@@ -112,7 +113,7 @@ export function VoluntariosTable({
               {Object.entries(igreja.cargos).map(([cargoId, cargo]) => (
                 <div key={cargoId} className="border-t">
                   <button
-                    className="w-full bg-muted/50 p-2 flex items-center justify-between hover:bg-muted/60 transition-colors"
+                    className="w-full bg-muted/50 p-3 flex items-center justify-between hover:bg-muted/60 transition-colors"
                     onClick={() => toggleCargo(igrejaId, cargoId)}
                   >
                     <h3 className="font-medium flex items-center">
@@ -122,9 +123,9 @@ export function VoluntariosTable({
                         <ChevronRightIcon className="h-4 w-4 mr-2" />
                       )}
                       {cargo.cargoNome}
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        ({cargo.voluntarios.length} voluntários)
-                      </span>
+                      <Badge variant="outline" className="ml-3">
+                        {cargo.voluntarios.length} voluntários
+                      </Badge>
                     </h3>
                   </button>
 
@@ -133,7 +134,7 @@ export function VoluntariosTable({
                       <TableHeader>
                         <TableRow>
                           <TableHead>Nome</TableHead>
-                          <TableHead>Telefone</TableHead>
+                          <TableHead>Contato</TableHead>
                           <TableHead>Disponibilidade</TableHead>
                           <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
@@ -142,25 +143,96 @@ export function VoluntariosTable({
                         {cargo.voluntarios.map((voluntario) => (
                           <TableRow key={voluntario.id}>
                             <TableCell className="font-medium">{voluntario.nome}</TableCell>
-                            <TableCell>{voluntario.telefone}</TableCell>
-                            <TableCell>{formatarDisponibilidades(voluntario.disponibilidades)}</TableCell>
+                            <TableCell>
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8">
+                                    <PhoneIcon className="h-4 w-4 mr-2" />
+                                    {voluntario.telefone}
+                                  </Button>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-fit">
+                                  <div className="flex flex-col gap-2">
+                                    <a
+                                      href={`tel:${voluntario.telefone}`}
+                                      className="text-sm text-blue-600 hover:underline"
+                                    >
+                                      Ligar para {voluntario.telefone}
+                                    </a>
+                                    <a
+                                      href={`https://wa.me/${voluntario.telefone.replace(/\D/g, '')}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm text-green-600 hover:underline"
+                                    >
+                                      Enviar WhatsApp
+                                    </a>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            </TableCell>
+                            <TableCell>
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8">
+                                    <CalendarIcon className="h-4 w-4 mr-2" />
+                                    Ver disponibilidade
+                                  </Button>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80">
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold">Dias disponíveis:</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {Object.entries(voluntario.disponibilidades || {}).map(([dia, disponivel]) => (
+                                        disponivel && (
+                                          <Badge
+                                            key={dia}
+                                            variant={dia.includes('domingo') ? 'default' : 'secondary'}
+                                          >
+                                            {dia === 'domingoRDJ' ? 'Domingo (RDJ)' :
+                                              dia.charAt(0).toUpperCase() + dia.slice(1)}
+                                          </Badge>
+                                        )
+                                      ))}
+                                    </div>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            </TableCell>
                             <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onEdit(voluntario)}
-                                className="mr-2"
-                              >
-                                <PencilIcon className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onDelete(voluntario.id)}
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => onEdit(voluntario)}
+                                      className="mr-2"
+                                    >
+                                      <PencilIcon className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Editar voluntário</p>
+                                  </TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => onDelete(voluntario.id)}
+                                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                    >
+                                      <TrashIcon className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Excluir voluntário</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </TableCell>
                           </TableRow>
                         ))}
