@@ -392,18 +392,25 @@ export default function EscalasPage() {
                   </TabsList>
 
                   <TabsContent value="calendario" className="mt-4">
-                    <Calendar
-                      mode="multiple"
-                      selected={diasCulto}
-                      className="rounded-md border mx-auto"
-                      disabled={(date) => !diasCulto.some(d => d.toDateString() === date.toDateString())}
-                      modifiers={{
-                        escala: escalaAtual.map(e => e.data)
-                      }}
-                      modifiersStyles={{
-                        escala: { backgroundColor: 'var(--primary)', color: 'white' }
-                      }}
-                    />
+                    <div className="flex flex-col items-center space-y-4">
+                      <Calendar
+                        mode="multiple"
+                        selected={diasCulto}
+                        className="rounded-md border"
+                        disabled={(date) => !diasCulto.some(d => d.toDateString() === date.toDateString())}
+                        modifiers={{
+                          culto: diasCulto
+                        }}
+                        modifiersStyles={{
+                          culto: { backgroundColor: 'black', color: 'white' }
+                        }}
+                      />
+
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: 'black' }}></div>
+                        <span>Dias de Culto</span>
+                      </div>
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="lista" className="mt-4">
