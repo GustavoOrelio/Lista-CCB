@@ -429,6 +429,30 @@ export default function EscalasPage() {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Estatísticas na aba lista */}
+                    {escalaAtual.length > 0 && (
+                      <div className="mt-6 border rounded-md p-4">
+                        <h3 className="text-lg font-semibold mb-3">Quantidade de Escalas por Voluntário</h3>
+                        <div className="grid gap-2">
+                          {Object.entries(
+                            escalaAtual.reduce((acc, item) => {
+                              item.voluntarios.forEach(v => {
+                                acc[v.nome] = (acc[v.nome] || 0) + 1;
+                              });
+                              return acc;
+                            }, {} as Record<string, number>)
+                          )
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([nome, quantidade]) => (
+                              <div key={nome} className="flex justify-between items-center py-1 px-2 bg-muted/50 rounded">
+                                <span>{nome}</span>
+                                <span className="font-medium">{quantidade} {quantidade === 1 ? 'vez' : 'vezes'}</span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                   </TabsContent>
                 </Tabs>
               </CardContent>
