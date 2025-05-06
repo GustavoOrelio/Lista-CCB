@@ -412,7 +412,6 @@ export default function EscalasPage() {
                         <thead>
                           <tr className="border-b">
                             <th className="px-4 py-2 text-left">Data</th>
-                            <th className="px-4 py-2 text-left">Horário</th>
                             <th className="px-4 py-2 text-left">Voluntários</th>
                           </tr>
                         </thead>
@@ -421,9 +420,6 @@ export default function EscalasPage() {
                             <tr key={index} className="border-b">
                               <td className="px-4 py-2">
                                 {item.data.toLocaleDateString()}
-                              </td>
-                              <td className="px-4 py-2">
-                                {item.data.getHours()}:00
                               </td>
                               <td className="px-4 py-2">
                                 {item.voluntarios.map(v => v.nome).join(', ')}
