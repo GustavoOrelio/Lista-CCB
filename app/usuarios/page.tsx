@@ -134,95 +134,86 @@ export default function UsuariosPage() {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <ScrollArea className="w-full">
           <div className="w-full overflow-x-auto">
-            <div className="min-w-[800px]">
-              <table className="w-full text-xs sm:text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="px-2 py-2 text-left font-medium text-gray-500">Nome</th>
-                    <th className="px-2 py-2 text-left font-medium text-gray-500">Email</th>
-                    <th className="px-2 py-2 text-left font-medium text-gray-500">Igrejas</th>
-                    <th className="px-2 py-2 text-left font-medium text-gray-500">Cargos</th>
-                    <th className="px-2 py-2 text-left font-medium text-gray-500">Tipo</th>
-                    <th className="px-2 py-2 text-right font-medium text-gray-500">Ações</th>
+            <table className="w-full text-xs sm:text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-2 py-2 text-left font-medium text-gray-500">Nome</th>
+                  <th className="px-2 py-2 text-left font-medium text-gray-500">Email</th>
+                  <th className="px-2 py-2 text-left font-medium text-gray-500 hidden md:table-cell">Igrejas</th>
+                  <th className="px-2 py-2 text-left font-medium text-gray-500 hidden md:table-cell">Cargos</th>
+                  <th className="px-2 py-2 text-left font-medium text-gray-500">Tipo</th>
+                  <th className="px-2 py-2 text-right font-medium text-gray-500">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usuarios.map((usuario) => (
+                  <tr key={usuario.id} className="border-b">
+                    <td className="px-2 py-2 text-sm truncate max-w-[120px]">{usuario.nome}</td>
+                    <td className="px-2 py-2 text-sm truncate max-w-[120px]">{usuario.email}</td>
+                    <td className="px-2 py-2 text-sm truncate max-w-[120px] hidden md:table-cell">{usuario.igrejas.map(id => getNomeIgreja(id)).join(', ')}</td>
+                    <td className="px-2 py-2 text-sm truncate max-w-[120px] hidden md:table-cell">{usuario.cargos.map(id => getNomeCargo(id)).join(', ')}</td>
+                    <td className="px-2 py-2 text-sm">{usuario.isAdmin ? 'Administrador' : 'Usuário'}</td>
+                    <td className="px-2 py-2 text-sm text-right">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(usuario)}
+                              className="mr-2"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar usuário</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(usuario)}
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Excluir usuário</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {usuarios.map((usuario) => (
-                    <tr key={usuario.id} className="border-b">
-                      <td className="px-2 py-2 text-sm">{usuario.nome}</td>
-                      <td className="px-2 py-2 text-sm">{usuario.email}</td>
-                      <td className="px-2 py-2 text-sm">
-                        {usuario.igrejas.map(id => getNomeIgreja(id)).join(', ')}
-                      </td>
-                      <td className="px-2 py-2 text-sm">
-                        {usuario.cargos.map(id => getNomeCargo(id)).join(', ')}
-                      </td>
-                      <td className="px-2 py-2 text-sm">
-                        {usuario.isAdmin ? 'Administrador' : 'Usuário'}
-                      </td>
-                      <td className="px-2 py-2 text-sm text-right">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEdit(usuario)}
-                                className="mr-2"
-                              >
-                                <PencilIcon className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Editar usuário</p>
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(usuario)}
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Excluir usuário</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </ScrollArea>
+
+        <NovoUsuarioDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          onUsuarioCriado={carregarDados}
+        />
+
+        <EditarUsuarioDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onUsuarioAtualizado={carregarDados}
+          usuario={usuarioSelecionado}
+        />
+
+        <ExcluirUsuarioDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onConfirm={handleConfirmDelete}
+          loading={loading}
+        />
       </div>
-
-      <NovoUsuarioDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onUsuarioCriado={carregarDados}
-      />
-
-      <EditarUsuarioDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        onUsuarioAtualizado={carregarDados}
-        usuario={usuarioSelecionado}
-      />
-
-      <ExcluirUsuarioDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleConfirmDelete}
-        loading={loading}
-      />
     </div>
   );
 } 
