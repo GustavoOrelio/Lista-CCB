@@ -414,23 +414,19 @@ export default function EscalasPage() {
                   </TabsContent>
 
                   <TabsContent value="lista" className="mt-4">
-                    <div className="rounded-md border">
-                      <table className="w-full">
+                    <div className="rounded-md border w-full overflow-x-auto">
+                      <table className="w-full text-xs sm:text-sm">
                         <thead>
                           <tr className="border-b">
-                            <th className="px-4 py-2 text-left">Data</th>
-                            <th className="px-4 py-2 text-left">Voluntários</th>
+                            <th className="px-2 py-2 text-left">Data</th>
+                            <th className="px-2 py-2 text-left">Voluntários</th>
                           </tr>
                         </thead>
                         <tbody>
                           {escalaAtual.map((item, index) => (
                             <tr key={index} className="border-b">
-                              <td className="px-4 py-2">
-                                {item.data.toLocaleDateString()}
-                              </td>
-                              <td className="px-4 py-2">
-                                {item.voluntarios.map(v => v.nome).join(', ')}
-                              </td>
+                              <td className="px-2 py-2">{item.data.toLocaleDateString()}</td>
+                              <td className="px-2 py-2 truncate max-w-[120px]">{item.voluntarios.map(v => v.nome).join(', ')}</td>
                             </tr>
                           ))}
                         </tbody>

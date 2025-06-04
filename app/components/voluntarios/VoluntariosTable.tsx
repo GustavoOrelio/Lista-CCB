@@ -130,114 +130,116 @@ export function VoluntariosTable({
                   </button>
 
                   {expandedCargos.has(`${igrejaId}-${cargoId}`) && (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Nome</TableHead>
-                          <TableHead>Contato</TableHead>
-                          <TableHead>Disponibilidade</TableHead>
-                          <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {cargo.voluntarios.map((voluntario) => (
-                          <TableRow key={voluntario.id}>
-                            <TableCell className="font-medium">{voluntario.nome}</TableCell>
-                            <TableCell>
-                              <HoverCard>
-                                <HoverCardTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-8">
-                                    <PhoneIcon className="h-4 w-4 mr-2" />
-                                    {voluntario.telefone}
-                                  </Button>
-                                </HoverCardTrigger>
-                                <HoverCardContent className="w-fit">
-                                  <div className="flex flex-col gap-2">
-                                    <a
-                                      href={`tel:${voluntario.telefone}`}
-                                      className="text-sm text-blue-600 hover:underline"
-                                    >
-                                      Ligar para {voluntario.telefone}
-                                    </a>
-                                    <a
-                                      href={`https://wa.me/${voluntario.telefone.replace(/\D/g, '')}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-sm text-green-600 hover:underline"
-                                    >
-                                      Enviar WhatsApp
-                                    </a>
-                                  </div>
-                                </HoverCardContent>
-                              </HoverCard>
-                            </TableCell>
-                            <TableCell>
-                              <HoverCard>
-                                <HoverCardTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-8">
-                                    <CalendarIcon className="h-4 w-4 mr-2" />
-                                    Ver disponibilidade
-                                  </Button>
-                                </HoverCardTrigger>
-                                <HoverCardContent className="w-80">
-                                  <div className="space-y-2">
-                                    <h4 className="text-sm font-semibold">Dias disponíveis:</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                      {Object.entries(voluntario.disponibilidades || {}).map(([dia, disponivel]) => (
-                                        disponivel && (
-                                          <Badge
-                                            key={dia}
-                                            variant={dia.includes('domingo') ? 'default' : 'secondary'}
-                                          >
-                                            {dia === 'domingoRDJ' ? 'Domingo (RDJ)' :
-                                              dia.charAt(0).toUpperCase() + dia.slice(1)}
-                                          </Badge>
-                                        )
-                                      ))}
-                                    </div>
-                                  </div>
-                                </HoverCardContent>
-                              </HoverCard>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => onEdit(voluntario)}
-                                      className="mr-2"
-                                    >
-                                      <PencilIcon className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Editar voluntário</p>
-                                  </TooltipContent>
-                                </Tooltip>
-
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => onDelete(voluntario.id)}
-                                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                    >
-                                      <TrashIcon className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Excluir voluntário</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </TableCell>
+                    <div className="w-full overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="px-2 py-2 text-xs sm:text-sm">Nome</TableHead>
+                            <TableHead className="px-2 py-2 text-xs sm:text-sm">Contato</TableHead>
+                            <TableHead className="px-2 py-2 text-xs sm:text-sm">Disponibilidade</TableHead>
+                            <TableHead className="px-2 py-2 text-xs sm:text-sm text-right">Ações</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {cargo.voluntarios.map((voluntario) => (
+                            <TableRow key={voluntario.id}>
+                              <TableCell className="font-medium px-2 py-2 truncate max-w-[120px]">{voluntario.nome}</TableCell>
+                              <TableCell className="px-2 py-2 truncate max-w-[120px]">
+                                <HoverCard>
+                                  <HoverCardTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8">
+                                      <PhoneIcon className="h-4 w-4 mr-2" />
+                                      {voluntario.telefone}
+                                    </Button>
+                                  </HoverCardTrigger>
+                                  <HoverCardContent className="w-fit">
+                                    <div className="flex flex-col gap-2">
+                                      <a
+                                        href={`tel:${voluntario.telefone}`}
+                                        className="text-sm text-blue-600 hover:underline"
+                                      >
+                                        Ligar para {voluntario.telefone}
+                                      </a>
+                                      <a
+                                        href={`https://wa.me/${voluntario.telefone.replace(/\D/g, '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-green-600 hover:underline"
+                                      >
+                                        Enviar WhatsApp
+                                      </a>
+                                    </div>
+                                  </HoverCardContent>
+                                </HoverCard>
+                              </TableCell>
+                              <TableCell className="px-2 py-2 truncate max-w-[120px]">
+                                <HoverCard>
+                                  <HoverCardTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8">
+                                      <CalendarIcon className="h-4 w-4 mr-2" />
+                                      Ver disponibilidade
+                                    </Button>
+                                  </HoverCardTrigger>
+                                  <HoverCardContent className="w-80">
+                                    <div className="space-y-2">
+                                      <h4 className="text-sm font-semibold">Dias disponíveis:</h4>
+                                      <div className="flex flex-wrap gap-2">
+                                        {Object.entries(voluntario.disponibilidades || {}).map(([dia, disponivel]) => (
+                                          disponivel && (
+                                            <Badge
+                                              key={dia}
+                                              variant={dia.includes('domingo') ? 'default' : 'secondary'}
+                                            >
+                                              {dia === 'domingoRDJ' ? 'Domingo (RDJ)' :
+                                                dia.charAt(0).toUpperCase() + dia.slice(1)}
+                                            </Badge>
+                                          )
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </HoverCardContent>
+                                </HoverCard>
+                              </TableCell>
+                              <TableCell className="px-2 py-2 text-right">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => onEdit(voluntario)}
+                                        className="mr-2"
+                                      >
+                                        <PencilIcon className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Editar voluntário</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => onDelete(voluntario.id)}
+                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                      >
+                                        <TrashIcon className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Excluir voluntário</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   )}
                 </div>
               ))}
