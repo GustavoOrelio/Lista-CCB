@@ -20,10 +20,10 @@ export default function Home() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Bem-vindo ao Sistema CCB</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl md:text-4xl font-bold">Bem-vindo ao Sistema CCB</h1>
+        <p className="mt-2 text-gray-600 text-base md:text-lg">
           Acompanhe as estatísticas e próximos eventos do sistema.
         </p>
       </div>
