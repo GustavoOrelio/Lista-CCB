@@ -23,7 +23,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-      <main className="flex-1 bg-gray-100 ml-0 md:ml-64">
+      <main className="flex-1 bg-gray-100 ml-0 md:ml-64 pt-16 md:pt-0">
         {children}
       </main>
     </div>
