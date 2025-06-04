@@ -15,7 +15,7 @@ import {
   UsersIcon,
   Bars3Icon,
 } from '@heroicons/react/24/outline';
-import { Sheet, SheetTrigger, SheetContent } from './ui/sheet';
+import { Sheet, SheetTrigger, SheetContent, SheetTitle } from './ui/sheet';
 import { Button } from './ui/button';
 
 interface MenuItem {
@@ -114,6 +114,7 @@ export default function Sidebar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64">
+            <SheetTitle className="sr-only">Menu lateral</SheetTitle>
             {sidebarContent}
           </SheetContent>
         </Sheet>
