@@ -4,6 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { DashboardStats } from './components/DashboardStats';
+import { DashboardCharts } from './components/DashboardCharts';
 
 export default function Home() {
   const { user } = useAuth();
@@ -29,6 +30,7 @@ export default function Home() {
       </div>
 
       <DashboardStats />
+      <DashboardCharts />
     </div>
   );
 }
