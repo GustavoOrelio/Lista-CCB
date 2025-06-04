@@ -119,3 +119,53 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Regras de responsividade global */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Ajustes para telas muito pequenas */
+@media (max-width: 360px) {
+  html {
+    font-size: 12px;
+  }
+}
+
+/* Ajustes para telas médias */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Ajustes para telas grandes */
+@media (min-width: 1025px) {
+  .container {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* Ajustes de toque para dispositivos móveis */
+@media (hover: none) {
+  button,
+  a,
+  [role="button"] {
+    @apply cursor-default;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply text-base;
+  }
+}
