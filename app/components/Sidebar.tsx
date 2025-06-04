@@ -14,9 +14,9 @@ import {
   ArrowRightOnRectangleIcon,
   UsersIcon,
   Bars3Icon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useState } from 'react';
+import { Sheet, SheetTrigger, SheetContent } from './ui/sheet';
+import { Button } from './ui/button';
 
 interface MenuItem {
   name: string;
@@ -39,7 +39,6 @@ export default function Sidebar() {
   const { logout } = useAuth();
   const { isAdmin } = usePermissions();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -54,7 +53,7 @@ export default function Sidebar() {
   // Filtra os itens do menu baseado nas permissões do usuário
   const filteredMenuItems = menuItems.filter(item => !item.requiresAdmin || isAdmin);
 
-  // Sidebar para desktop
+  // Sidebar content
   const sidebarContent = (
     <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200">
       <div className="flex h-16 items-center px-6 border-b border-gray-200">
@@ -71,7 +70,6 @@ export default function Sidebar() {
                 ? 'bg-gray-100 text-gray-900'
                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
-              onClick={() => setOpen(false)}
             >
               <item.icon
                 className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-900'
@@ -97,41 +95,29 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Botão hambúrguer para mobile */}
-      <button
-        className="fixed top-4 left-4 z-40 md:hidden bg-white rounded-md p-2 shadow border border-gray-200"
-        onClick={() => setOpen(true)}
-        aria-label="Abrir menu"
-      >
-        <Bars3Icon className="h-6 w-6 text-gray-700" />
-      </button>
-
-      {/* Sidebar para desktop */}
+      {/* Sidebar fixo para desktop */}
       <div className="hidden md:flex h-screen w-64 flex-col fixed left-0 top-0 z-30">
         {sidebarContent}
       </div>
 
-      {/* Drawer para mobile */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
-          {/* Sidebar Drawer */}
-          <div className="relative w-64 h-full bg-white shadow-lg border-r border-gray-200 animate-slide-in-left">
-            <button
-              className="absolute top-4 right-4 z-50 bg-gray-100 rounded-md p-1 border border-gray-300"
-              onClick={() => setOpen(false)}
-              aria-label="Fechar menu"
+      {/* Drawer para mobile usando Sheet do shadcn/ui */}
+      <div className="md:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="fixed top-4 left-4 z-40 bg-white border border-gray-200 shadow"
+              aria-label="Abrir menu"
             >
-              <XMarkIcon className="h-6 w-6 text-gray-700" />
-            </button>
+              <Bars3Icon className="h-6 w-6 text-gray-700" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64">
             {sidebarContent}
-          </div>
-        </div>
-      )}
+          </SheetContent>
+        </Sheet>
+      </div>
     </>
   );
 }
