@@ -8,13 +8,16 @@ import { igrejaService } from '@/app/services/igrejaService';
 import { cargoService } from '@/app/services/cargoService';
 import { EscalaService } from '@/app/services/escalaService';
 
-const COLORS = ["#64748b", "#94a3b8", "#cbd5e1", "#e5e7eb", "#a3a3a3", "#60a5fa", "#d1d5db", "#f1f5f9"];
 const PIE_COLORS = ["#64748b", "#cbd5e1", "#94a3b8", "#e5e7eb", "#a3a3a3"];
 
+interface BarData { igreja: string; total: number; }
+interface PieData { name: string; value: number; color: string; }
+interface LineData { mes: string; total: number; }
+
 export function DashboardCharts() {
-  const [data, setData] = useState<any[]>([]);
-  const [pieData, setPieData] = useState<any[]>([]);
-  const [lineData, setLineData] = useState<any[]>([]);
+  const [data, setData] = useState<BarData[]>([]);
+  const [pieData, setPieData] = useState<PieData[]>([]);
+  const [lineData, setLineData] = useState<LineData[]>([]);
   const [loading, setLoading] = useState(true);
   const [heatmap, setHeatmap] = useState<{ [dia: string]: { [horario: string]: number } }>({});
 
@@ -56,14 +59,13 @@ export function DashboardCharts() {
       const mes = hoje.getMonth();
       const ano = hoje.getFullYear();
       // Buscar escalas do mês para todas as igrejas/cargos
-      let escalas: any[] = [];
+      let escalas: { data: string | Date }[] = [];
       // Para simplificar, buscar para igreja/cargo vazio (todas)
       try {
         escalas = await EscalaService.getEscalaDoMes(mes, ano, '', '');
       } catch { }
       // Mapear dias da semana e horários
       const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      const horarios = ['Manhã', 'Tarde', 'Noite'];
       // Inicializar matriz
       const matriz: { [dia: string]: { [horario: string]: number } } = {};
       diasSemana.forEach(dia => {

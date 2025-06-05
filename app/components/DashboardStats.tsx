@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Users, Calendar, Church, Clock } from "lucide-react";
+import { Users, Calendar, Church } from "lucide-react";
 import { voluntarioService } from '@/app/services/voluntarioService';
 import { EscalaService } from '@/app/services/escalaService';
 import { igrejaService } from '@/app/services/igrejaService';
