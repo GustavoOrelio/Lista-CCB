@@ -104,26 +104,6 @@ export function DashboardStats() {
           <div className="text-2xl font-bold">{stats.totalIgrejas}</div>
         </CardContent>
       </Card>
-
-      <Card className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Próximos Eventos</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {stats.proximosEventos.map((evento) => (
-              <div key={evento.id} className="flex items-center justify-between">
-                <span className="text-sm font-medium">{evento.descricao}</span>
-                <span className="text-sm text-muted-foreground">{evento.data}</span>
-              </div>
-            ))}
-            {stats.proximosEventos.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhum evento próximo</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 } 
