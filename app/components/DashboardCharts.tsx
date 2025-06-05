@@ -9,6 +9,7 @@ import { cargoService } from '@/app/services/cargoService';
 import { EscalaService } from '@/app/services/escalaService';
 
 const COLORS = ["#64748b", "#94a3b8", "#cbd5e1", "#e5e7eb", "#a3a3a3", "#60a5fa", "#d1d5db", "#f1f5f9"];
+const PIE_COLORS = ["#64748b", "#cbd5e1", "#94a3b8", "#e5e7eb", "#a3a3a3"];
 
 export function DashboardCharts() {
   const [data, setData] = useState<any[]>([]);
@@ -33,7 +34,7 @@ export function DashboardCharts() {
       const porCargo = cargos.map((cargo, idx) => ({
         name: cargo.nome,
         value: voluntarios.filter(v => v.cargoId === cargo.id).length,
-        color: COLORS[idx % COLORS.length]
+        color: PIE_COLORS[idx % PIE_COLORS.length]
       })).filter(c => c.value > 0);
       setPieData(porCargo);
       // Evolução de voluntários ao longo dos meses (acumulado)
