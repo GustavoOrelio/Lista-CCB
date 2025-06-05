@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { Voluntario } from '../types/voluntario';
 import { Igreja } from '../types/igreja';
@@ -60,11 +60,7 @@ export default function Voluntarios() {
     },
   });
 
-  useEffect(() => {
-    carregarDados();
-  }, [userData?.igreja, userData?.cargo]);
-
-  const carregarDados = async () => {
+  const carregarDados = useCallback(async () => {
     try {
       const filtros = !isAdmin ? {
         igrejaId: userData?.igreja,
@@ -83,7 +79,11 @@ export default function Voluntarios() {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados. Por favor, tente novamente.');
     }
-  };
+  }, [isAdmin, userData?.igreja, userData?.cargo]);
+
+  useEffect(() => {
+    carregarDados();
+  }, [carregarDados]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,15 +205,6 @@ export default function Voluntarios() {
     }
   };
 
-  const formatarDisponibilidades = (disponibilidades: Voluntario['disponibilidades']) => {
-    if (!disponibilidades) return '';
-
-    return diasSemana
-      .filter(dia => disponibilidades[dia.key])
-      .map(dia => dia.label)
-      .join(', ');
-  };
-
   const handleOpenModal = () => {
     setNovoVoluntario({
       nome: '',
@@ -251,7 +242,6 @@ export default function Voluntarios() {
         voluntarios={voluntarios}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        formatarDisponibilidades={formatarDisponibilidades}
       />
 
       <Dialog open={isModalOpen} onOpenChange={(open) => {
