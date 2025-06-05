@@ -6,7 +6,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { voluntarioService } from '@/app/services/voluntarioService';
 import { igrejaService } from '@/app/services/igrejaService';
 import { cargoService } from '@/app/services/cargoService';
-import { EscalaService } from '@/app/services/escalaService';
 
 const PIE_COLORS = ["#64748b", "#cbd5e1", "#94a3b8", "#e5e7eb", "#a3a3a3"];
 
@@ -17,7 +16,6 @@ export function DashboardCharts() {
   const [data, setData] = useState<BarData[]>([]);
   const [pieData, setPieData] = useState<PieData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [heatmap, setHeatmap] = useState<{ [dia: string]: { [horario: string]: number } }>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -38,34 +36,6 @@ export function DashboardCharts() {
         color: PIE_COLORS[idx % PIE_COLORS.length]
       })).filter(c => c.value > 0);
       setPieData(porCargo);
-      // Heatmap de presença (último mês)
-      const hoje = new Date();
-      const mes = hoje.getMonth();
-      const ano = hoje.getFullYear();
-      // Buscar escalas do mês para todas as igrejas/cargos
-      let escalas: { data: string | Date }[] = [];
-      // Para simplificar, buscar para igreja/cargo vazio (todas)
-      try {
-        escalas = await EscalaService.getEscalaDoMes(mes, ano, '', '');
-      } catch { }
-      // Mapear dias da semana e horários
-      const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      // Inicializar matriz
-      const matriz: { [dia: string]: { [horario: string]: number } } = {};
-      diasSemana.forEach(dia => {
-        matriz[dia] = { Manhã: 0, Tarde: 0, Noite: 0 };
-      });
-      // Preencher matriz
-      escalas.forEach((escala) => {
-        const data = new Date(escala.data);
-        const dia = diasSemana[data.getDay()];
-        const hora = data.getHours();
-        let horario = 'Manhã';
-        if (hora >= 12 && hora < 18) horario = 'Tarde';
-        if (hora >= 18) horario = 'Noite';
-        matriz[dia][horario]++;
-      });
-      setHeatmap(matriz);
       setLoading(false);
     }
     fetchData();
@@ -127,40 +97,6 @@ export function DashboardCharts() {
                 </PieChart>
               </ResponsiveContainer>
             )}
-          </div>
-        </CardContent>
-      </Card>
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-base md:text-lg">Heatmap de Presença (Escalas por Dia/Horário - Último mês)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="min-w-max border-collapse">
-              <thead>
-                <tr>
-                  <th className="p-2 text-xs font-medium text-gray-500 bg-muted"></th>
-                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(dia => (
-                    <th key={dia} className="p-2 text-xs font-medium text-gray-500 bg-muted">{dia}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {['Manhã', 'Tarde', 'Noite'].map(horario => (
-                  <tr key={horario}>
-                    <td className="p-2 text-xs font-medium text-gray-500 bg-muted">{horario}</td>
-                    {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(dia => {
-                      const valor = heatmap[dia]?.[horario] || 0;
-                      // Definir cor baseada no valor
-                      const cor = valor === 0 ? 'bg-gray-100' : valor < 2 ? 'bg-blue-50' : valor < 4 ? 'bg-blue-200' : 'bg-blue-400 text-white';
-                      return (
-                        <td key={dia} className={`p-2 text-center rounded transition-colors ${cor}`}>{valor}</td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </CardContent>
       </Card>
