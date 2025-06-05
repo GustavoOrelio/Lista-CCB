@@ -8,7 +8,7 @@ import { igrejaService } from '@/app/services/igrejaService';
 import { cargoService } from '@/app/services/cargoService';
 import { EscalaService } from '@/app/services/escalaService';
 
-const COLORS = ["#6366f1", "#f59e42", "#10b981", "#ef4444", "#3b82f6", "#a21caf", "#eab308", "#14b8a6"];
+const COLORS = ["#64748b", "#94a3b8", "#cbd5e1", "#e5e7eb", "#a3a3a3", "#60a5fa", "#d1d5db", "#f1f5f9"];
 
 export function DashboardCharts() {
   const [data, setData] = useState<any[]>([]);
@@ -102,7 +102,7 @@ export function DashboardCharts() {
                   <YAxis allowDecimals={false} fontSize={12} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="total" fill="#6366f1" name="Voluntários" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" fill="#64748b" name="Voluntários" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -159,7 +159,7 @@ export function DashboardCharts() {
                   <YAxis allowDecimals={false} fontSize={12} />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={3} dot={{ r: 4 }} name="Voluntários" />
+                  <Line type="monotone" dataKey="total" stroke="#64748b" strokeWidth={3} dot={{ r: 4, stroke: '#64748b', fill: '#fff' }} name="Voluntários" />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -188,7 +188,7 @@ export function DashboardCharts() {
                     {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(dia => {
                       const valor = heatmap[dia]?.[horario] || 0;
                       // Definir cor baseada no valor
-                      const cor = valor === 0 ? 'bg-gray-100' : valor < 2 ? 'bg-blue-100' : valor < 4 ? 'bg-blue-400' : 'bg-blue-700 text-white';
+                      const cor = valor === 0 ? 'bg-gray-100' : valor < 2 ? 'bg-blue-50' : valor < 4 ? 'bg-blue-200' : 'bg-blue-400 text-white';
                       return (
                         <td key={dia} className={`p-2 text-center rounded transition-colors ${cor}`}>{valor}</td>
                       );
