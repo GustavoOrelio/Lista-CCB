@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/app/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { voluntarioService } from '@/app/services/voluntarioService';
 import { igrejaService } from '@/app/services/igrejaService';
 import { cargoService } from '@/app/services/cargoService';
@@ -12,6 +12,7 @@ const COLORS = ["#6366f1", "#f59e42", "#10b981", "#ef4444", "#3b82f6", "#a21caf"
 export function DashboardCharts() {
   const [data, setData] = useState<any[]>([]);
   const [pieData, setPieData] = useState<any[]>([]);
+  const [lineData, setLineData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +34,20 @@ export function DashboardCharts() {
         color: COLORS[idx % COLORS.length]
       })).filter(c => c.value > 0);
       setPieData(porCargo);
+      // Evolução de voluntários ao longo dos meses (acumulado)
+      const meses = Array.from({ length: 12 }, (_, i) => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - (11 - i));
+        return d;
+      });
+      const evolucao = meses.map((mes) => {
+        // Não temos data de cadastro, então mostramos o total acumulado
+        return {
+          mes: mes.toLocaleString('default', { month: 'short', year: '2-digit' }),
+          total: voluntarios.length
+        };
+      });
+      setLineData(evolucao);
       setLoading(false);
     }
     fetchData();
@@ -92,6 +107,29 @@ export function DashboardCharts() {
                   <Tooltip />
                   <Legend />
                 </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-base md:text-lg">Evolução do Número de Voluntários (últimos 12 meses)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72 w-full">
+            {loading ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground">Carregando...</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={lineData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mes" fontSize={12} />
+                  <YAxis allowDecimals={false} fontSize={12} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={3} dot={{ r: 4 }} name="Voluntários" />
+                </LineChart>
               </ResponsiveContainer>
             )}
           </div>
