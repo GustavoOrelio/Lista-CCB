@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Users, Calendar, Church } from "lucide-react";
+import { Users, Calendar, Church, Briefcase } from "lucide-react";
 import { voluntarioService } from '@/app/services/voluntarioService';
 import { EscalaService } from '@/app/services/escalaService';
 import { igrejaService } from '@/app/services/igrejaService';
+import { cargoService } from '@/app/services/cargoService';
 
 interface DashboardStats {
   totalVoluntarios: number;
   totalEscalas: number;
   totalIgrejas: number;
+  totalCargos: number;
   proximosEventos: Array<{
     id: string;
     data: string;
@@ -23,6 +25,7 @@ export function DashboardStats() {
     totalVoluntarios: 0,
     totalEscalas: 0,
     totalIgrejas: 0,
+    totalCargos: 0,
     proximosEventos: []
   });
 
@@ -34,6 +37,9 @@ export function DashboardStats() {
 
         // Buscar total de igrejas
         const igrejas = await igrejaService.listar();
+
+        // Buscar total de cargos
+        const cargos = await cargoService.listar();
 
         // Buscar escalas do mês atual
         const dataAtual = new Date();
@@ -63,6 +69,7 @@ export function DashboardStats() {
           totalVoluntarios: voluntarios.length,
           totalEscalas: escalasFuturas.length,
           totalIgrejas: igrejas.length,
+          totalCargos: cargos.length,
           proximosEventos
         });
       } catch (error) {
@@ -102,6 +109,16 @@ export function DashboardStats() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.totalIgrejas}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Cargos Cadastrados</CardTitle>
+          <Briefcase className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalCargos}</div>
         </CardContent>
       </Card>
     </div>
