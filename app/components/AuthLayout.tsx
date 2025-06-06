@@ -21,9 +21,9 @@ export function AuthLayout({ children }: { children: ReactNode }) {
 
   // Se estiver autenticado e não estiver na página de login, mostra a Sidebar
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 bg-gray-100 ml-0 md:ml-64 pt-16 md:pt-0">
+      <main className="flex-1 bg-background ml-0 md:ml-64 pt-16 md:pt-0">
         {children}
       </main>
     </div>

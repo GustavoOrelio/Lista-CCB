@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Sheet, SheetTrigger, SheetContent, SheetTitle } from './ui/sheet';
 import { Button } from './ui/button';
+import { ThemeToggle } from './ThemeToggle';
 
 interface MenuItem {
   name: string;
@@ -55,9 +56,10 @@ export default function Sidebar() {
 
   // Sidebar content
   const sidebarContent = (
-    <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200">
-      <div className="flex h-16 items-center px-6 border-b border-gray-200">
-        <h1 className="text-gray-800 text-lg font-medium">Sistema CCB</h1>
+    <div className="flex h-full w-64 flex-col bg-background border-r border-border">
+      <div className="flex h-16 items-center px-6 border-b border-border justify-between">
+        <h1 className="text-foreground text-lg font-medium">Sistema CCB</h1>
+        <ThemeToggle />
       </div>
       <nav className="flex-1 space-y-0.5 px-2 py-4">
         {filteredMenuItems.map((item) => {
@@ -67,12 +69,12 @@ export default function Sidebar() {
               key={item.name}
               href={item.href}
               className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all ${isActive
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
             >
               <item.icon
-                className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-900'
+                className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
                   }`}
                 aria-hidden="true"
               />
@@ -81,10 +83,10 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-gray-200 p-4">
+      <div className="border-t border-border p-4">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-all"
+          className="flex w-full items-center px-3 py-2 text-sm font-medium text-destructive hover:bg-muted rounded-md transition-all"
         >
           <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" aria-hidden="true" />
           Sair

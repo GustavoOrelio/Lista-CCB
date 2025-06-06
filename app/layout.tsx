@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className="bg-gray-100">
-      <body className={`${inter.className} bg-gray-100 min-h-screen w-full overflow-x-hidden`}>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body className={`${inter.className} bg-background text-foreground min-h-screen w-full overflow-x-hidden`}>
         <Providers>
           <AuthLayout>
             <main className="w-full max-w-[100vw] overflow-x-hidden">
