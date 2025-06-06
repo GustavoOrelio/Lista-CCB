@@ -46,10 +46,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card className="w-[400px]">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Card className="w-[400px] bg-card">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Login</CardTitle>
+          <CardTitle className="text-2xl text-center text-foreground">Login</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,7 +77,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setResetPasswordOpen(true)}
-                  className="text-sm text-black hover:text-gray-700 underline transition-colors"
+                  className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
                 >
                   Esqueceu sua senha?
                 </button>
