@@ -70,17 +70,33 @@ export const exportService = {
       ["DATA", "PEDIDO", "AB.IGREJA"],
     ];
 
-    // Formatar os dados da escala
-    const dadosEscala = escala.map((item) => {
-      const data = item.data;
-      const diaSemana = this.getDiaSemana(data);
-      return [
-        `${data.getDate().toString().padStart(2, "0")}/${(data.getMonth() + 1)
-          .toString()
-          .padStart(2, "0")} ${diaSemana}`,
-        item.voluntarios[0]?.nome || "",
-        item.voluntarios[1]?.nome || "",
-      ];
+    // Agrupar por dia para marcar RDJ
+    const grouped: Record<string, EscalaItem[]> = {};
+    escala.forEach((item) => {
+      const key = item.data.toISOString().slice(0, 10);
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    });
+    // Gerar lista final com label
+    const dadosEscala: string[][] = [];
+    Object.values(grouped).forEach((items) => {
+      const data = items[0].data;
+      const isDomingo = data.getDay() === 0;
+      items.forEach((item, idx) => {
+        let label = "";
+        if (isDomingo) {
+          label = idx === 0 ? "Domingo (RDJ)" : "Domingo";
+        } else {
+          label = this.getDiaSemana(data);
+        }
+        dadosEscala.push([
+          `${data.getDate().toString().padStart(2, "0")}/${(data.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")} ${label}`,
+          item.voluntarios[0]?.nome || "",
+          item.voluntarios[1]?.nome || "",
+        ]);
+      });
     });
 
     // Buscar todos os voluntários escalados
@@ -358,6 +374,35 @@ export const exportService = {
         .map((v) => [v.id, v])
     );
 
+    // Agrupar por dia para marcar RDJ
+    const grouped: Record<string, EscalaItem[]> = {};
+    escala.forEach((item) => {
+      const key = item.data.toISOString().slice(0, 10);
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    });
+    // Gerar lista final com label
+    const dadosEscala: string[][] = [];
+    Object.values(grouped).forEach((items) => {
+      const data = items[0].data;
+      const isDomingo = data.getDay() === 0;
+      items.forEach((item, idx) => {
+        let label = "";
+        if (isDomingo) {
+          label = idx === 0 ? "Domingo (RDJ)" : "Domingo";
+        } else {
+          label = this.getDiaSemana(data);
+        }
+        dadosEscala.push([
+          `${data.getDate().toString().padStart(2, "0")}/${(data.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")} ${label}`,
+          item.voluntarios[0]?.nome || "",
+          item.voluntarios[1]?.nome || "",
+        ]);
+      });
+    });
+
     // Criar o PDF
     const doc = new jsPDF();
 
@@ -380,19 +425,6 @@ export const exportService = {
 
     doc.text(cabecalhoMesAno, doc.internal.pageSize.width / 2, 22, {
       align: "center",
-    });
-
-    // Preparar dados da escala
-    const dadosEscala = escala.map((item) => {
-      const data = item.data;
-      const diaSemana = this.getDiaSemana(data);
-      return [
-        `${data.getDate().toString().padStart(2, "0")}/${(data.getMonth() + 1)
-          .toString()
-          .padStart(2, "0")} ${diaSemana}`,
-        item.voluntarios[0]?.nome || "",
-        item.voluntarios[1]?.nome || "",
-      ] as RowInput;
     });
 
     try {
