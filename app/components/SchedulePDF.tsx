@@ -43,12 +43,18 @@ export default function SchedulePDF({ entries, month, year }: SchedulePDFProps) 
         </Text>
         {entries
           .sort((a, b) => a.day - b.day)
-          .map((entry, index) => (
-            <View key={index} style={styles.entry}>
-              <Text style={styles.day}>Dia {entry.day}:</Text>
-              <Text style={styles.people}>{entry.people.join(', ')}</Text>
-            </View>
-          ))}
+          .map((entry, index) => {
+            let people = entry.people;
+            if (people.length === 2 && index % 2 === 1) {
+              people = [people[1], people[0]];
+            }
+            return (
+              <View key={index} style={styles.entry}>
+                <Text style={styles.day}>Dia {entry.day}:</Text>
+                <Text style={styles.people}>{people.join(', ')}</Text>
+              </View>
+            );
+          })}
       </Page>
     </Document>
   );
