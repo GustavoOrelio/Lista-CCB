@@ -270,6 +270,35 @@ export default function EscalasPage() {
     }
   };
 
+  // Processa escala para marcar RDJ na lista
+  const escalaProcessada = React.useMemo(() => {
+    // Agrupa por dia
+    const grouped: Record<string, EscalaItem[]> = {};
+    escalaAtual.forEach((item) => {
+      const key = item.data.toISOString().slice(0, 10);
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    });
+    // Gera lista final com label
+    const finalList: { data: Date; label: string; voluntarios: EscalaItem["voluntarios"] }[] = [];
+    Object.values(grouped).forEach((items) => {
+      const data = items[0].data;
+      const isDomingo = data.getDay() === 0;
+      items.forEach((item, idx) => {
+        let label = '';
+        if (isDomingo) {
+          label = idx === 0 ? 'Domingo (RDJ)' : 'Domingo';
+        } else {
+          label = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+          label = label.charAt(0).toUpperCase() + label.slice(1);
+        }
+        finalList.push({ data, label, voluntarios: item.voluntarios });
+      });
+    });
+    // Ordena por data
+    return finalList.sort((a, b) => a.data.getTime() - b.data.getTime() || a.label.localeCompare(b.label));
+  }, [escalaAtual]);
+
   return (
     <div className="p-4 sm:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -423,9 +452,9 @@ export default function EscalasPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {escalaAtual.map((item, index) => (
+                          {escalaProcessada.map((item, index) => (
                             <tr key={index} className="border-b">
-                              <td className="px-2 py-2">{item.data.toLocaleDateString()}</td>
+                              <td className="px-2 py-2">{item.data.toLocaleDateString()} {item.label}</td>
                               <td className="px-2 py-2 truncate max-w-[120px]">{item.voluntarios.map(v => v.nome).join(', ')}</td>
                             </tr>
                           ))}
