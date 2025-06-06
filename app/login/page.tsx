@@ -9,6 +9,8 @@ import { Label } from "@/app/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { toast } from "sonner";
 import ResetPasswordDialog from '../components/ResetPasswordDialog';
+import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -46,7 +48,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-background relative">
+      <div className="absolute top-4 right-4 z-10">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <ThemeToggle />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              Alternar tema escuro/claro
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
       <Card className="w-[400px] bg-card">
         <CardHeader>
           <CardTitle className="text-2xl text-center text-foreground">Login</CardTitle>
