@@ -48,21 +48,19 @@ export function DashboardCharts() {
           <CardTitle className="text-base md:text-lg">Distribuição de Voluntários por Igreja</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-72 w-full">
-            {loading ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground">Carregando...</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full h-72 overflow-x-auto">
+            <div className="min-w-[350px]">
+              <ResponsiveContainer width="100%" height={288}>
                 <BarChart data={data} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="igreja" fontSize={12} />
-                  <YAxis allowDecimals={false} fontSize={12} />
+                  <XAxis dataKey="igreja" fontSize={10} />
+                  <YAxis allowDecimals={false} fontSize={10} />
                   <Tooltip />
-                  <Legend />
+                  <Legend wrapperStyle={{ display: typeof window !== 'undefined' && window.innerWidth < 640 ? 'none' : 'block' }} />
                   <Bar dataKey="total" fill="#64748b" name="Voluntários" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -71,13 +69,13 @@ export function DashboardCharts() {
           <CardTitle className="text-base md:text-lg">Distribuição de Voluntários por Cargo</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-72 w-full flex items-center justify-center">
+          <div className="w-full h-72 flex items-center justify-center">
             {loading ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">Carregando...</div>
             ) : pieData.length === 0 ? (
               <div className="text-muted-foreground">Nenhum dado para exibir</div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={288}>
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -87,13 +85,15 @@ export function DashboardCharts() {
                     cy="50%"
                     outerRadius={80}
                     label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    labelLine={false}
+                    fontSize={10}
                   >
                     {pieData.map((entry, idx) => (
                       <Cell key={`cell-${idx}`} fill={entry.color} />
                     ))}
                   </Pie>
+                  <Legend wrapperStyle={{ display: typeof window !== 'undefined' && window.innerWidth < 640 ? 'none' : 'block' }} />
                   <Tooltip />
-                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             )}
