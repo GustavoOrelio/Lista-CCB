@@ -39,10 +39,26 @@ export default function NovoUsuarioDialog({ open, onOpenChange, onUsuarioCriado 
   const [cargos, setCargos] = useState<Cargo[]>([]);
   const [loading, setLoading] = useState(false);
 
+  function limparFormulario() {
+    setNome('');
+    setEmail('');
+    setSenha('');
+    setIgrejasIds([]);
+    setCargosIds([]);
+    setIsAdmin(false);
+  }
+
   useEffect(() => {
     carregarIgrejas();
     carregarCargos();
   }, []);
+
+  // Limpar campos quando o diálogo é aberto
+  useEffect(() => {
+    if (open) {
+      limparFormulario();
+    }
+  }, [open]);
 
   async function carregarIgrejas() {
     try {
@@ -103,15 +119,6 @@ export default function NovoUsuarioDialog({ open, onOpenChange, onUsuarioCriado 
     } finally {
       setLoading(false);
     }
-  }
-
-  function limparFormulario() {
-    setNome('');
-    setEmail('');
-    setSenha('');
-    setIgrejasIds([]);
-    setCargosIds([]);
-    setIsAdmin(false);
   }
 
   return (
