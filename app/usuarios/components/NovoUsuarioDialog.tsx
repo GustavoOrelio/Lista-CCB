@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { PasswordInput } from "@/app/components/ui/password-input";
 import { Label } from "@/app/components/ui/label";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { toast } from "sonner";
@@ -141,9 +142,8 @@ export default function NovoUsuarioDialog({ open, onOpenChange, onUsuarioCriado 
           </div>
           <div className="space-y-2">
             <Label htmlFor="senha">Senha</Label>
-            <Input
+            <PasswordInput
               id="senha"
-              type="password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required
