@@ -9,7 +9,7 @@ import { Label } from "@/app/components/ui/label";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { toast } from "sonner";
 import { db, auth } from '../../config/firebase';
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc, query, where } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 interface NovoUsuarioDialogProps {
@@ -90,11 +90,46 @@ export default function NovoUsuarioDialog({ open, onOpenChange, onUsuarioCriado 
     }
   }
 
+  async function verificarEmailExistente(email: string): Promise<boolean> {
+    try {
+      const usuariosRef = collection(db, 'usuarios');
+      const q = query(usuariosRef, where('email', '==', email));
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error('Erro ao verificar email:', error);
+      return false;
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Validações básicas
+      if (!nome.trim()) {
+        toast.error('Nome é obrigatório.');
+        return;
+      }
+
+      if (!email.trim()) {
+        toast.error('Email é obrigatório.');
+        return;
+      }
+
+      if (!senha || senha.length < 6) {
+        toast.error('A senha deve ter pelo menos 6 caracteres.');
+        return;
+      }
+
+      // Verificar se o email já existe no Firestore
+      const emailJaExiste = await verificarEmailExistente(email);
+      if (emailJaExiste) {
+        toast.error('Este email já está sendo usado por outro usuário.');
+        return;
+      }
+
       // Criar usuário no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
       const uid = userCredential.user.uid;
@@ -113,9 +148,32 @@ export default function NovoUsuarioDialog({ open, onOpenChange, onUsuarioCriado 
       onUsuarioCriado();
       onOpenChange(false);
       limparFormulario();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao criar usuário:', error);
-      toast.error('Erro ao criar usuário. Verifique os dados e tente novamente.');
+
+      // Tratamento específico para diferentes tipos de erro
+      let mensagemErro = 'Erro ao criar usuário. Tente novamente.';
+
+      if (error?.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            mensagemErro = 'Este email já está sendo usado por outro usuário.';
+            break;
+          case 'auth/weak-password':
+            mensagemErro = 'A senha deve ter pelo menos 6 caracteres.';
+            break;
+          case 'auth/invalid-email':
+            mensagemErro = 'Email inválido. Verifique o formato do email.';
+            break;
+          case 'auth/operation-not-allowed':
+            mensagemErro = 'Criação de usuários não permitida. Contate o administrador.';
+            break;
+          default:
+            mensagemErro = `Erro: ${error.message || 'Erro desconhecido'}`;
+        }
+      }
+
+      toast.error(mensagemErro);
     } finally {
       setLoading(false);
     }
@@ -151,6 +209,7 @@ export default function NovoUsuarioDialog({ open, onOpenChange, onUsuarioCriado 
             <Label htmlFor="senha">Senha</Label>
             <PasswordInput
               id="senha"
+              placeholder="Mínimo 6 caracteres"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required
