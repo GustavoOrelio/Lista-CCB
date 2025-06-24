@@ -460,10 +460,44 @@
 
 ---
 
+---
+
+## 🎯 **FASE ADICIONAL: Sistema de Regras de Escala** (Semana 7-8)
+
+### Regras de Negócio Identificadas
+
+Baseado nos requisitos específicos apresentados, foi identificada a necessidade de um sistema flexível de regras para geração automática de escalas:
+
+**Regras Mapeadas:**
+
+1. **Reunião Jovens/Menores**: Fábio + Antônio (fixos)
+2. **Terça-feira**: Joel + Paulo (fixos)
+3. **Ensaio Local**: Joel + Paulo (fixos)
+4. **Sábado**: Reginaldo + Nelson + Marcelo P. (fixos para abrir)
+5. **Intercalamento**: Grupo específico alterna entre sábado/terça
+6. **Restrições**: Voluntários com limitações específicas por tipo de culto
+
+### Implementação Necessária
+
+- [ ] **Modelagem de regras configuráveis** (8h)
+- [ ] **Interface de configuração** (12h)
+- [ ] **Engine de geração com regras** (16h)
+- [ ] **Integração com sistema existente** (8h)
+- [ ] **Interface de usuário** (8h)
+- [ ] **Testes das regras** (6h)
+- [ ] **Deploy e configuração inicial** (4h)
+
+**Total adicional: 62h (~2 semanas)**
+
+Ver detalhes completos no arquivo: `ATIVIDADES_REGRAS_ESCALA.md`
+
+---
+
 ## 📞 Próximos Passos
 
-1. **Revisar e aprovar este plano**
-2. **Alocar recursos (desenvolvedores, tempo)**
-3. **Começar pela Fase 1**
+1. **Revisar e aprovar este plano** (incluindo sistema de regras)
+2. **Alocar recursos (desenvolvedores, tempo)** - Agora 8 semanas total
+3. **Começar pela Fase 1** (Preparação Firebase → Prisma)
 4. **Setup de reuniões semanais de acompanhamento**
 5. **Definir critérios de sucesso mensuráveis**
+6. **Priorizar se sistema de regras vai junto com migração ou em fase separada**
