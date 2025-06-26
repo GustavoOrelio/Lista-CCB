@@ -24,7 +24,9 @@
     "migration:import": "node scripts/importToNeon.js",
     "migration:import:clear": "node scripts/importToNeon.js --clear",
     "migration:transform": "npx ts-node scripts/transformData.ts",
-    "migration:full": "npm run firebase:export && npm run prisma:push && npm run migration:import:clear",
+    "migration:import-prisma": "npx ts-node scripts/importDataToPrisma.ts",
+    "migration:full": "npm run firebase:export && npm run migration:transform && npm run prisma:push && npm run migration:import-prisma",
+    "migration:full-legacy": "npm run firebase:export && npm run prisma:push && npm run migration:import:clear",
     "migration:summary": "node scripts/migration-summary.js"
   },
   "dependencies": {
