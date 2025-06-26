@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===============================================
+// MODELS - Sistema de Gerenciamento de Voluntários
+// ===============================================
+
+model Usuario {
+  id       String   @id @default(cuid())
+  uid      String   @unique // Firebase Auth UID
+  email    String   @unique
+  nome     String
+  igrejaId String?
+  cargo    String?
+  isAdmin  Boolean  @default(false)
+  criadoEm DateTime @default(now())
+
+  // Relations
+  igreja Igreja? @relation(fields: [igrejaId], references: [id])
+
+  @@map("usuarios")
+}
+
+model Igreja {
+  id              String   @id @default(cuid())
+  nome            String
+  cultoDomingoRDJ Boolean  @default(false)
+  cultoDomingo    Boolean  @default(false)
+  cultoSegunda    Boolean  @default(false)
+  cultoTerca      Boolean  @default(false)
+  cultoQuarta     Boolean  @default(false)
+  cultoQuinta     Boolean  @default(false)
+  cultoSexta      Boolean  @default(false)
+  cultoSabado     Boolean  @default(false)
+  criadoEm        DateTime @default(now())
+
+  // Relations
+  usuarios    Usuario[]
+  voluntarios Voluntario[]
+  escalas     Escala[]
+
+  @@map("igrejas")
+}
+
+model Cargo {
+  id        String   @id @default(cuid())
+  nome      String
+  descricao String?
+  criadoEm  DateTime @default(now())
+
+  // Relations
+  voluntarios Voluntario[]
+  escalas     Escala[]
+
+  @@map("cargos")
+}
+
+model Voluntario {
+  id              String    @id @default(cuid())
+  nome            String
+  telefone        String
+  igrejaId        String
+  cargoId         String
+  diasTrabalhados Int       @default(0)
+  ultimaEscala    DateTime?
+  criadoEm        DateTime  @default(now())
+
+  // Relations
+  igreja           Igreja             @relation(fields: [igrejaId], references: [id])
+  cargo            Cargo              @relation(fields: [cargoId], references: [id])
+  disponibilidades Disponibilidade[]
+  escalasVolunt    EscalaVoluntario[]
+
+  // Indexes for performance optimization
+  @@index([igrejaId])
+  @@index([cargoId])
+  @@map("voluntarios")
+}
+
+model Disponibilidade {
+  id           String    @id @default(cuid())
+  voluntarioId String
+  diaSemana    DiaSemana
+  disponivel   Boolean   @default(false)
+
+  // Relations
+  voluntario Voluntario @relation(fields: [voluntarioId], references: [id], onDelete: Cascade)
+
+  // Unique constraint to prevent duplicate availability entries
+  @@unique([voluntarioId, diaSemana])
+  @@map("disponibilidades")
+}
+
+model Escala {
+  id       String   @id @default(cuid())
+  mes      Int
+  ano      Int
+  igrejaId String
+  cargoId  String
+  criadoEm DateTime @default(now())
+
+  // Relations
+  igreja Igreja      @relation(fields: [igrejaId], references: [id])
+  cargo  Cargo       @relation(fields: [cargoId], references: [id])
+  dias   EscalaDia[]
+
+  // Unique constraint to prevent duplicate schedules
+  @@unique([mes, ano, igrejaId, cargoId])
+  @@index([igrejaId, cargoId]) // Performance optimization for queries
+  @@map("escalas")
+}
+
+model EscalaDia {
+  id        String   @id @default(cuid())
+  escalaId  String
+  data      DateTime
+  tipoCulto String
+
+  // Relations
+  escala      Escala             @relation(fields: [escalaId], references: [id], onDelete: Cascade)
+  voluntarios EscalaVoluntario[]
+
+  // Index for date-based queries
+  @@index([data])
+  @@map("escala_dias")
+}
+
+model EscalaVoluntario {
+  id           String @id @default(cuid())
+  escalaDiaId  String
+  voluntarioId String
+
+  // Relations
+  escalaDia  EscalaDia  @relation(fields: [escalaDiaId], references: [id], onDelete: Cascade)
+  voluntario Voluntario @relation(fields: [voluntarioId], references: [id])
+
+  // Unique constraint to prevent duplicate volunteer assignments
+  @@unique([escalaDiaId, voluntarioId])
+  @@map("escala_voluntarios")
+}
+
+// ===============================================
+// ENUMS
+// ===============================================
+
+enum DiaSemana {
+  DOMINGO_RDJ
+  DOMINGO
+  SEGUNDA
+  TERCA
+  QUARTA
+  QUINTA
+  SEXTA
+  SABADO
+}

@@ -12,10 +12,15 @@
     "db:test:dev": "node scripts/neon/test-connection.js dev",
     "db:test:prod": "node scripts/neon/test-connection.js prod",
     "db:test:all": "node scripts/neon/test-connection.js --all",
-    "db:monitor": "echo \"💰 Monitore uso em: https://console.neon.tech\""
+    "db:monitor": "echo \"💰 Monitore uso em: https://console.neon.tech\"",
+    "prisma:test": "node scripts/test-prisma.js",
+    "prisma:push": "npx prisma db push",
+    "prisma:studio": "npx prisma studio",
+    "prisma:generate": "npx prisma generate"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@prisma/client": "^6.10.1",
     "@radix-ui/react-alert-dialog": "^1.1.7",
     "@radix-ui/react-checkbox": "^1.1.5",
     "@radix-ui/react-dialog": "^1.1.11",
@@ -28,6 +33,7 @@
     "@radix-ui/react-tooltip": "^1.2.4",
     "@react-pdf/renderer": "^4.3.0",
     "@types/file-saver": "^2.0.7",
+    "@types/pg": "^8.15.4",
     "@types/xlsx": "^0.0.35",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -40,6 +46,8 @@
     "lucide-react": "^0.488.0",
     "next": "15.2.5",
     "next-themes": "^0.4.6",
+    "pg": "^8.16.2",
+    "prisma": "^6.10.1",
     "react": "^18.0.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.0.0",
