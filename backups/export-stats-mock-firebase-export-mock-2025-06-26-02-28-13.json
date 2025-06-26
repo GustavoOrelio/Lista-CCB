@@ -1,0 +1,16 @@
+{
+  "filename": "firebase-export-mock-2025-06-26-02-28-13.json",
+  "filepath": "D:\\Projetos\\ProjetoRecibo\\lista-porteiros\\backups\\firebase-export-mock-2025-06-26-02-28-13.json",
+  "exportedAt": "2025-06-26T02:28:13.922Z",
+  "statistics": {
+    "usuarios": 2,
+    "igrejas": 1,
+    "cargos": 2,
+    "voluntarios": 2,
+    "escalas": 1
+  },
+  "totalRecords": 8,
+  "validationIssues": [],
+  "fileSize": 2120,
+  "isMockData": true
+}

@@ -1,0 +1,88 @@
+{
+  "usuarios": [
+    {
+      "id": "user1",
+      "uid": "firebase-uid-123",
+      "email": "admin@igreja.com",
+      "nome": "Administrador",
+      "igrejaId": "igreja1",
+      "cargo": "admin",
+      "isAdmin": true,
+      "criadoEm": "2024-01-15T10:30:00.000Z"
+    },
+    {
+      "id": "user2",
+      "uid": "firebase-uid-456",
+      "email": "pastor@igreja.com",
+      "nome": "Pastor João",
+      "igrejaId": "igreja1",
+      "cargo": "pastor",
+      "isAdmin": false,
+      "criadoEm": "2024-01-16T14:20:00.000Z"
+    }
+  ],
+  "igrejas": [
+    {
+      "id": "igreja1",
+      "nome": "Igreja Central",
+      "cultoDomingoRDJ": true,
+      "cultoDomingo": true,
+      "cultoSegunda": false,
+      "cultoTerca": false,
+      "cultoQuarta": true,
+      "cultoQuinta": false,
+      "cultoSexta": false,
+      "cultoSabado": false,
+      "criadoEm": "2024-01-01T08:00:00.000Z"
+    }
+  ],
+  "cargos": [
+    {
+      "id": "cargo1",
+      "nome": "Porteiro",
+      "descricao": "Responsável pela recepção e segurança",
+      "criadoEm": "2024-01-01T08:00:00.000Z"
+    },
+    {
+      "id": "cargo2",
+      "nome": "Diácono",
+      "descricao": "Auxiliar nos serviços da igreja",
+      "criadoEm": "2024-01-01T08:00:00.000Z"
+    }
+  ],
+  "voluntarios": [
+    {
+      "id": "vol1",
+      "nome": "José Silva",
+      "telefone": "(11) 99999-1111",
+      "igrejaId": "igreja1",
+      "cargoId": "cargo1",
+      "diasTrabalhados": 15,
+      "ultimaEscala": "2024-01-14T19:00:00.000Z",
+      "criadoEm": "2024-01-05T10:00:00.000Z"
+    },
+    {
+      "id": "vol2",
+      "nome": "Maria Santos",
+      "telefone": "(11) 99999-2222",
+      "igrejaId": "igreja1",
+      "cargoId": "cargo1",
+      "diasTrabalhados": 12,
+      "ultimaEscala": "2024-01-13T19:00:00.000Z",
+      "criadoEm": "2024-01-06T11:00:00.000Z"
+    }
+  ],
+  "escalas": [
+    {
+      "id": "escala1",
+      "mes": 1,
+      "ano": 2024,
+      "igrejaId": "igreja1",
+      "cargoId": "cargo1",
+      "criadoEm": "2024-01-01T12:00:00.000Z"
+    }
+  ],
+  "exportedAt": "2025-06-26T02:28:13.922Z",
+  "exportVersion": "1.0.0",
+  "source": "Mock Data for Testing"
+}

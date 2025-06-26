@@ -1,0 +1,28 @@
+# ===============================================
+# 📝 TEMPLATE - CONFIGURAÇÃO NEONDB PARA PRISMA
+# ===============================================
+# Copie este conteúdo para .env.local na raiz do projeto
+
+# NeonDB Connection String - Development Branch
+DATABASE_URL="postgresql://usuario:senha@ep-projeto-123456.us-east-1.aws.neon.tech/neondb?sslmode=require"
+
+# Substitua:
+# - "usuario" pelo usuário real do NeonDB
+# - "senha" pela senha real
+# - "ep-projeto-123456" pelo endpoint da sua branch development
+# - Mantenha "neondb" como nome do banco
+
+# Environment Configuration
+NODE_ENV="development"
+
+# ===============================================
+# 🔧 PASSOS PARA CONFIGURAR:
+# ===============================================
+# 1. Acesse: https://console.neon.tech
+# 2. Selecione seu projeto
+# 3. Vá em "Dashboard" → "Connection Details"
+# 4. Copie a connection string da branch "development"
+# 5. Cole acima substituindo o template
+# 6. Salve como .env.local na raiz do projeto
+# 7. Execute: npm run prisma:test
+# =============================================== 
