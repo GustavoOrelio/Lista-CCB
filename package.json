@@ -16,7 +16,15 @@
     "prisma:test": "node scripts/test-prisma.js",
     "prisma:push": "npx prisma db push",
     "prisma:studio": "npx prisma studio",
-    "prisma:generate": "npx prisma generate"
+    "prisma:generate": "npx prisma generate",
+    "firebase:export": "node scripts/exportFirebaseData.js",
+    "firebase:test": "node scripts/test-firebase-export.js",
+    "migration:export": "npm run firebase:export",
+    "migration:test": "npm run firebase:test",
+    "migration:import": "node scripts/importToNeon.js",
+    "migration:import:clear": "node scripts/importToNeon.js --clear",
+    "migration:full": "npm run firebase:export && npm run prisma:push && npm run migration:import:clear",
+    "migration:summary": "node scripts/migration-summary.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -40,7 +48,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "file-saver": "^2.0.5",
-    "firebase": "^11.6.0",
+    "firebase": "^11.9.1",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.488.0",
@@ -62,7 +70,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-input-mask": "^3.0.6",
@@ -70,6 +78,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }

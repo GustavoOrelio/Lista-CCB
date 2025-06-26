@@ -1,0 +1,15 @@
+{
+  "filename": "firebase-export-2025-06-26-02-31-28.json",
+  "filepath": "D:\\Projetos\\ProjetoRecibo\\lista-porteiros\\backups\\firebase-export-2025-06-26-02-31-28.json",
+  "exportedAt": "2025-06-26T02:31:28.383Z",
+  "statistics": {
+    "usuarios": 2,
+    "igrejas": 4,
+    "cargos": 3,
+    "voluntarios": 19,
+    "escalas": 10
+  },
+  "totalRecords": 38,
+  "validationIssues": [],
+  "fileSize": 61478
+}
