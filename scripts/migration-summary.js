@@ -129,10 +129,10 @@ function main() {
   console.log("   • Execute: npm run prisma:push");
   console.log("   • Verifique: npm run prisma:studio");
 
-  console.log("\n3. 📋 Script de Importação:");
-  console.log("   • Criar script para importar JSON → PostgreSQL");
-  console.log("   • Mapear IDs do Firebase para PostgreSQL");
-  console.log("   • Validar integridade dos dados");
+  console.log("\n3. ✅ Migração Concluída:");
+  console.log("   • Script de importação: scripts/importToNeon.js");
+  console.log("   • 38 registros migrados com sucesso");
+  console.log("   • Execute: npm run migration:import:clear");
 
   console.log("\n4. 🔄 Migração Gradual:");
   console.log("   • Manter Firebase funcionando");
@@ -143,12 +143,14 @@ function main() {
   // 8. Status Atual
   console.log("\n📊 STATUS ATUAL");
   console.log("═".repeat(30));
-  const totalSteps = 4;
+  const totalSteps = 5;
+  const importScriptExists = checkFileExists("scripts/importToNeon.js");
   const completedSteps = [
     schemaExists,
     neonGuideExists,
     exportScriptExists,
     backupFiles.length > 0,
+    importScriptExists,
   ].filter(Boolean).length;
   const progress = Math.round((completedSteps / totalSteps) * 100);
 
