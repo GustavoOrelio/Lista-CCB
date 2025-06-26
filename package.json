@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "create-admin": "node scripts/createAdminUser.js"
+    "create-admin": "node scripts/createAdminUser.js",
+    "db:test": "node scripts/neon/test-connection.js dev",
+    "db:test:dev": "node scripts/neon/test-connection.js dev",
+    "db:test:prod": "node scripts/neon/test-connection.js prod",
+    "db:test:all": "node scripts/neon/test-connection.js --all",
+    "db:monitor": "echo \"💰 Monitore uso em: https://console.neon.tech\""
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

@@ -28,6 +28,14 @@ Documentação de processos de migração e regras de negócio do sistema.
 | 📝 [`MIGRATION_TASKS.md`](./migration/MIGRATION_TASKS.md)                   | **Tarefas de migração** - Detalhamento técnico das tarefas         | ~18KB   | _(anterior)_       |
 | ⚡ [`ATIVIDADES_REGRAS_ESCALA.md`](./migration/ATIVIDADES_REGRAS_ESCALA.md) | **Regras de escala** - Atividades e regras de negócio              | ~12KB   | _(anterior)_       |
 
+### 🐘 **Configuração NeonDB**
+
+Guia completo de configuração do banco de dados PostgreSQL na nuvem.
+
+| Arquivo                                               | Descrição                                                                            | Tamanho | Última Atualização |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------ | ------- | ------------------ |
+| 🐘 [`NEONDB_SETUP_GUIDE.md`](./NEONDB_SETUP_GUIDE.md) | **Guia completo NeonDB** - Configuração de ambientes, connection strings e segurança | ~25KB   | 25/06/2025         |
+
 ---
 
 ## 🎯 **Guia de Leitura por Perfil**
