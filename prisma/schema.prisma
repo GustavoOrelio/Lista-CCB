@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id           String   @id @default(cuid())
+  uid          String   @unique
+  nome         String
+  email        String   @unique
+  senha        String
+  igrejaId     String?
+  cargo        String?
+  isAdmin      Boolean  @default(false)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  // Relacionamento com igreja
+  igreja Igreja? @relation(fields: [igrejaId], references: [id])
+
+  @@map("usuarios")
+}
+
+model Igreja {
+  id              String   @id @default(cuid())
+  nome            String
+  cultoDomingoRDJ Boolean  @default(false)
+  cultoDomingo    Boolean  @default(false)
+  cultoSegunda    Boolean  @default(false)
+  cultoTerca      Boolean  @default(false)
+  cultoQuarta     Boolean  @default(false)
+  cultoQuinta     Boolean  @default(false)
+  cultoSexta      Boolean  @default(false)
+  cultoSabado     Boolean  @default(false)
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+
+  // Relacionamentos
+  usuarios    Usuario[]
+  voluntarios Voluntario[]
+  escalaItens EscalaItem[]
+
+  @@map("igrejas")
+}
+
+model Cargo {
+  id           String   @id @default(cuid())
+  nome         String
+  descricao    String
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  // Relacionamentos
+  voluntarios Voluntario[]
+  escalaItens EscalaItem[]
+
+  @@map("cargos")
+}
+
+model Voluntario {
+  id           String   @id @default(cuid())
+  nome         String
+  telefone     String
+  igrejaId     String
+  cargoId      String
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  // Disponibilidades
+  domingoRDJ Boolean @default(false)
+  domingo    Boolean @default(false)
+  segunda    Boolean @default(false)
+  terca      Boolean @default(false)
+  quarta     Boolean @default(false)
+  quinta     Boolean @default(false)
+  sexta      Boolean @default(false)
+  sabado     Boolean @default(false)
+
+  // Relacionamentos
+  igreja  Igreja             @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
+  cargo   Cargo              @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  escalas VoluntarioEscala[]
+
+  @@map("voluntarios")
+}
+
+model EscalaItem {
+  id           String   @id @default(cuid())
+  data         DateTime
+  igrejaId     String
+  cargoId      String
+  tipoCulto    String // 'domingoRDJ', 'domingo', 'segunda', etc
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  // Relacionamentos
+  igreja      Igreja             @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
+  cargo       Cargo              @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  voluntarios VoluntarioEscala[]
+
+  @@map("escala_itens")
+}
+
+model VoluntarioEscala {
+  id           String   @id @default(cuid())
+  voluntarioId String
+  escalaItemId String
+  criadoEm     DateTime @default(now())
+
+  // Relacionamentos
+  voluntario Voluntario @relation(fields: [voluntarioId], references: [id], onDelete: Cascade)
+  escalaItem EscalaItem @relation(fields: [escalaItemId], references: [id], onDelete: Cascade)
+
+  @@unique([voluntarioId, escalaItemId])
+  @@map("voluntario_escalas")
+}
