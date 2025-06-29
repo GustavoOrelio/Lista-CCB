@@ -3,14 +3,15 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/app/components/ui/button';
-import { Card, CardContent } from '@/app/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Calendar } from '@/app/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { EscalaService } from '@/app/services/escalaService';
+import { Badge } from '@/app/components/ui/badge';
 import { toast } from 'sonner';
-import { exportService } from '../services/exportService';
+import { exportService } from '@/app/services/exportService';
+import { escalaService } from '@/app/services/client/escalaService';
 import { FileText, Calendar as CalendarIcon, Table } from 'lucide-react';
 
 interface EscalaItem {
@@ -61,8 +62,8 @@ export default function EscalasPage() {
       try {
         setIsInitialLoading(true);
         const [igrejasData, cargosData] = await Promise.all([
-          EscalaService.getIgrejas(),
-          EscalaService.getCargos()
+          escalaService.getIgrejas(),
+          escalaService.getCargos()
         ]);
         setIgrejas(igrejasData);
         setCargos(cargosData);
@@ -84,7 +85,7 @@ export default function EscalasPage() {
 
     const carregarEscala = async () => {
       try {
-        const escala = await EscalaService.getEscalaDoMes(
+        const escala = await escalaService.getEscalaDoMes(
           selectedMonth.getMonth(),
           selectedMonth.getFullYear(),
           selectedIgreja,
@@ -188,7 +189,7 @@ export default function EscalasPage() {
 
     try {
       setIsLoading(true);
-      const escala = await EscalaService.gerarEscala(diasCulto, selectedIgreja, selectedCargo);
+      const escala = await escalaService.gerarEscala(diasCulto, selectedIgreja, selectedCargo);
 
       if (escala.length === 0) {
         toast.error('Não foi possível gerar a escala', {

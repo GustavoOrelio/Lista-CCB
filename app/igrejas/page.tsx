@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { Igreja } from '../types/igreja';
-import { igrejaService } from '../services/igrejaService';
+import { igrejaService } from '../services/client/igrejaService';
 import { Button } from '@/app/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
 import { Input } from '@/app/components/ui/input';

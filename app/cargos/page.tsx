@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { Cargo } from '../types/cargo';
-import { cargoService } from '../services/cargoService';
+import { cargoService } from '../services/client/cargoService';
 import { Button } from '@/app/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
 import { Input } from '@/app/components/ui/input';

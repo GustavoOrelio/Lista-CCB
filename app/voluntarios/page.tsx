@@ -6,9 +6,9 @@ import { Voluntario } from '../types/voluntario';
 import { Igreja } from '../types/igreja';
 import { Cargo } from '../types/cargo';
 import { DiaSemana } from '../types/diaSemana';
-import { voluntarioService } from '../services/voluntarioService';
-import { igrejaService } from '../services/igrejaService';
-import { cargoService } from '../services/cargoService';
+import { voluntarioService } from '../services/client/voluntarioService';
+import { igrejaService } from '../services/client/igrejaService';
+import { cargoService } from '../services/client/cargoService';
 import { Button } from '@/app/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/app/components/ui/dialog';
 import { VoluntariosTable } from '../components/voluntarios/VoluntariosTable';
@@ -30,7 +30,7 @@ const diasSemana: DiaSemana[] = [
 ];
 
 export default function Voluntarios() {
-  const { userData } = useAuth();
+  const { user } = useAuth();
   const { isAdmin } = usePermissions();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -63,8 +63,8 @@ export default function Voluntarios() {
   const carregarDados = useCallback(async () => {
     try {
       const filtros = !isAdmin ? {
-        igrejaId: userData?.igreja,
-        cargoId: userData?.cargo,
+        igrejaId: user?.igreja,
+        cargoId: user?.cargo,
       } : undefined;
 
       const [dadosVoluntarios, dadosIgrejas, dadosCargos] = await Promise.all([
@@ -79,7 +79,7 @@ export default function Voluntarios() {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados. Por favor, tente novamente.');
     }
-  }, [isAdmin, userData?.igreja, userData?.cargo]);
+  }, [isAdmin, user?.igreja, user?.cargo]);
 
   useEffect(() => {
     carregarDados();
