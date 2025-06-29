@@ -6,9 +6,8 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { toast } from "sonner";
-import { db } from '../../config/firebase';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 
 interface EditarUsuarioDialogProps {
   open: boolean;
@@ -18,8 +17,8 @@ interface EditarUsuarioDialogProps {
     id: string;
     nome: string;
     email: string;
-    igrejas: string[];
-    cargos: string[];
+    igreja: string;
+    cargo: string;
     isAdmin: boolean;
   } | null;
 }
@@ -29,61 +28,47 @@ interface Igreja {
   nome: string;
 }
 
-interface Cargo {
-  id: string;
-  nome: string;
-}
-
 export default function EditarUsuarioDialog({ open, onOpenChange, onUsuarioAtualizado, usuario }: EditarUsuarioDialogProps) {
   const [nome, setNome] = useState('');
-  const [igrejasIds, setIgrejasIds] = useState<string[]>([]);
-  const [cargosIds, setCargosIds] = useState<string[]>([]);
+  const [igrejaId, setIgrejaId] = useState('');
+  const [cargo, setCargo] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [igrejas, setIgrejas] = useState<Igreja[]>([]);
-  const [cargos, setCargos] = useState<Cargo[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (usuario) {
+    if (usuario && open) {
       setNome(usuario.nome);
-      setIgrejasIds(usuario.igrejas);
-      setCargosIds(usuario.cargos);
+      setCargo(usuario.cargo);
       setIsAdmin(usuario.isAdmin);
+
+      // Encontrar o ID da igreja pelo nome
+      const igreja = igrejas.find(i => i.nome === usuario.igreja);
+      setIgrejaId(igreja?.id || '');
     }
-  }, [usuario]);
+  }, [usuario, open, igrejas]);
 
   useEffect(() => {
-    carregarIgrejas();
-    carregarCargos();
-  }, []);
+    if (open) {
+      carregarIgrejas();
+    }
+  }, [open]);
 
   async function carregarIgrejas() {
     try {
-      const igrejasRef = collection(db, 'igrejas');
-      const snapshot = await getDocs(igrejasRef);
-      const igrejasData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Igreja[];
-      setIgrejas(igrejasData);
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch('/api/igrejas', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const igrejasData = await response.json();
+        setIgrejas(igrejasData);
+      }
     } catch (error) {
       console.error('Erro ao carregar igrejas:', error);
       toast.error('Erro ao carregar igrejas.');
-    }
-  }
-
-  async function carregarCargos() {
-    try {
-      const cargosRef = collection(db, 'cargos');
-      const snapshot = await getDocs(cargosRef);
-      const cargosData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Cargo[];
-      setCargos(cargosData);
-    } catch (error) {
-      console.error('Erro ao carregar cargos:', error);
-      toast.error('Erro ao carregar cargos.');
     }
   }
 
@@ -94,20 +79,33 @@ export default function EditarUsuarioDialog({ open, onOpenChange, onUsuarioAtual
     setLoading(true);
 
     try {
-      const userRef = doc(db, 'usuarios', usuario.id);
-      await updateDoc(userRef, {
-        nome,
-        igrejas: igrejasIds,
-        cargos: cargosIds,
-        isAdmin
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch(`/api/usuarios/${usuario.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nome,
+          email: usuario.email,
+          igrejaId: igrejaId || null,
+          cargo: cargo || null,
+          isAdmin
+        }),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao atualizar usuário');
+      }
 
       toast.success('Usuário atualizado com sucesso!');
       onUsuarioAtualizado();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao atualizar usuário:', error);
-      toast.error('Erro ao atualizar usuário. Tente novamente.');
+      toast.error(error.message || 'Erro ao atualizar usuário. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -117,7 +115,7 @@ export default function EditarUsuarioDialog({ open, onOpenChange, onUsuarioAtual
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Usuário</DialogTitle>
         </DialogHeader>
@@ -131,6 +129,7 @@ export default function EditarUsuarioDialog({ open, onOpenChange, onUsuarioAtual
               required
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -138,63 +137,54 @@ export default function EditarUsuarioDialog({ open, onOpenChange, onUsuarioAtual
               type="email"
               value={usuario.email}
               disabled
+              className="bg-muted"
+            />
+            <p className="text-sm text-muted-foreground">
+              O email não pode ser alterado
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="igreja">Igreja</Label>
+            <Select value={igrejaId} onValueChange={setIgrejaId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma igreja" />
+              </SelectTrigger>
+              <SelectContent>
+                {igrejas.map((igreja) => (
+                  <SelectItem key={igreja.id} value={igreja.id}>
+                    {igreja.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cargo">Cargo</Label>
+            <Input
+              id="cargo"
+              value={cargo}
+              onChange={(e) => setCargo(e.target.value)}
+              placeholder="Ex: Pastor, Diácono, Auxiliar..."
             />
           </div>
-          <div className="space-y-2">
-            <Label>Igrejas</Label>
-            <div className="border rounded-md p-4 space-y-2">
-              {igrejas.map((igreja) => (
-                <div key={igreja.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`igreja-${igreja.id}`}
-                    checked={igrejasIds.includes(igreja.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setIgrejasIds(prev => [...prev, igreja.id]);
-                      } else {
-                        setIgrejasIds(prev => prev.filter(id => id !== igreja.id));
-                      }
-                    }}
-                  />
-                  <Label htmlFor={`igreja-${igreja.id}`}>{igreja.nome}</Label>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Cargos</Label>
-            <div className="border rounded-md p-4 space-y-2">
-              {cargos.map((cargo) => (
-                <div key={cargo.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`cargo-${cargo.id}`}
-                    checked={cargosIds.includes(cargo.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setCargosIds(prev => [...prev, cargo.id]);
-                      } else {
-                        setCargosIds(prev => prev.filter(id => id !== cargo.id));
-                      }
-                    }}
-                  />
-                  <Label htmlFor={`cargo-${cargo.id}`}>{cargo.nome}</Label>
-                </div>
-              ))}
-            </div>
-          </div>
+
           <div className="flex items-center space-x-2">
             <Checkbox
               id="isAdmin"
               checked={isAdmin}
               onCheckedChange={(checked) => setIsAdmin(checked as boolean)}
             />
-            <Label htmlFor="isAdmin">Usuário Administrador</Label>
+            <Label htmlFor="isAdmin">Administrador</Label>
           </div>
-          <div className="flex justify-end space-x-2">
+
+          <div className="flex justify-end space-x-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={loading}
             >
               Cancelar
             </Button>

@@ -6,52 +6,53 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
 
 interface ExcluirUsuarioDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-  loading: boolean;
+  onConfirmar: () => void;
+  usuario: {
+    id: string;
+    nome: string;
+    email: string;
+  } | null;
 }
 
-export default function ExcluirUsuarioDialog({
-  open,
-  onOpenChange,
-  onConfirm,
-  loading
-}: ExcluirUsuarioDialogProps) {
+export default function ExcluirUsuarioDialog({ open, onOpenChange, onConfirmar, usuario }: ExcluirUsuarioDialogProps) {
+  if (!usuario) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Excluir Usuário</DialogTitle>
+          <DialogTitle>Confirmar Exclusão</DialogTitle>
           <DialogDescription>
-            Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
+            Tem certeza que deseja excluir o usuário <strong>{usuario.nome}</strong>?
+            Esta ação não pode ser desfeita.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
-          <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={onConfirm}
-              disabled={loading}
-            >
-              {loading ? 'Excluindo...' : 'Excluir'}
-            </Button>
-          </div>
-        </DialogFooter>
+
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => {
+              onConfirmar();
+              onOpenChange(false);
+            }}
+          >
+            Excluir
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

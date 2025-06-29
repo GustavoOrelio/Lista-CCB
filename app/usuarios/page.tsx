@@ -1,219 +1,187 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from "@/app/components/ui/button";
-import { toast } from "sonner";
-import { usePermissions } from '../hooks/usePermissions';
-import { useRouter } from 'next/navigation';
-import { db } from '../config/firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import NovoUsuarioDialog from './components/NovoUsuarioDialog';
 import EditarUsuarioDialog from './components/EditarUsuarioDialog';
 import ExcluirUsuarioDialog from './components/ExcluirUsuarioDialog';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
-import { ScrollArea } from "@/app/components/ui/scroll-area";
 
 interface Usuario {
   id: string;
-  email: string;
   nome: string;
-  igrejas: string[];
-  igrejasNomes?: string[];
-  cargos: string[];
-  cargosNomes?: string[];
+  email: string;
+  igreja: string;
+  cargo: string;
   isAdmin: boolean;
 }
 
-
 export default function UsuariosPage() {
+  const { user: currentUser } = useAuth();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [igrejas, setIgrejas] = useState<Map<string, string>>(new Map());
-  const [cargos, setCargos] = useState<Map<string, string>>(new Map());
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [usuarioSelecionado, setUsuarioSelecionado] = useState<Usuario | null>(null);
-  const [loading, setLoading] = useState(false);
-  const { canManageUsers } = usePermissions();
-  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [novoUsuarioOpen, setNovoUsuarioOpen] = useState(false);
+  const [editarUsuario, setEditarUsuario] = useState<Usuario | null>(null);
+  const [excluirUsuario, setExcluirUsuario] = useState<Usuario | null>(null);
 
-  useEffect(() => {
-    if (!canManageUsers()) {
-      router.push('/');
-      toast.error('Você não tem permissão para acessar esta página.');
-      return;
-    }
-    carregarDados();
-  }, [canManageUsers, router]);
-
-  async function carregarDados() {
+  const carregarUsuarios = async () => {
     try {
-      // Carregar igrejas
-      const igrejasRef = collection(db, 'igrejas');
-      const igrejasSnapshot = await getDocs(igrejasRef);
-      const igrejasMap = new Map<string, string>();
-      igrejasSnapshot.docs.forEach(doc => {
-        igrejasMap.set(doc.id, doc.data().nome);
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch('/api/usuarios', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
-      setIgrejas(igrejasMap);
-
-      // Carregar cargos
-      const cargosRef = collection(db, 'cargos');
-      const cargosSnapshot = await getDocs(cargosRef);
-      const cargosMap = new Map<string, string>();
-      cargosSnapshot.docs.forEach(doc => {
-        cargosMap.set(doc.id, doc.data().nome);
-      });
-      setCargos(cargosMap);
-
-      // Carregar usuários
-      const usuariosRef = collection(db, 'usuarios');
-      const usuariosSnapshot = await getDocs(usuariosRef);
-      const usuariosData = usuariosSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          igrejas: data.igrejas || [],
-          cargos: data.cargos || [],
-        };
-      }) as Usuario[];
-
-      setUsuarios(usuariosData);
+      if (response.ok) {
+        const data = await response.json();
+        setUsuarios(data);
+      } else {
+        console.error('Erro ao carregar usuários');
+      }
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados.');
-    }
-  }
-
-  const handleEdit = (usuario: Usuario) => {
-    setUsuarioSelecionado(usuario);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleDelete = (usuario: Usuario) => {
-    setUsuarioSelecionado(usuario);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!usuarioSelecionado) return;
-
-    setLoading(true);
-    try {
-      await deleteDoc(doc(db, 'usuarios', usuarioSelecionado.id));
-      setUsuarios(prev => prev.filter(u => u.id !== usuarioSelecionado.id));
-      toast.success('Usuário excluído com sucesso!');
-      setIsDeleteDialogOpen(false);
-      setUsuarioSelecionado(null);
-    } catch (error) {
-      console.error('Erro ao excluir usuário:', error);
-      toast.error('Erro ao excluir usuário. Tente novamente.');
+      console.error('Erro ao carregar usuários:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getNomeIgreja = (id: string) => igrejas.get(id) || id;
-  const getNomeCargo = (id: string) => cargos.get(id) || id;
+  const handleExcluirUsuario = async (id: string) => {
+    try {
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch(`/api/usuarios/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-  if (!canManageUsers()) {
-    return null;
+      if (response.ok) {
+        setUsuarios(usuarios.filter((u) => u.id !== id));
+        setExcluirUsuario(null);
+      } else {
+        console.error('Erro ao excluir usuário');
+      }
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+    }
+  };
+
+  useEffect(() => {
+    carregarUsuarios();
+  }, []);
+
+  // Verificar se o usuário atual é admin
+  if (!currentUser?.isAdmin) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-muted-foreground">
+              Acesso negado. Apenas administradores podem gerenciar usuários.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-muted-foreground">
+              Carregando usuários...
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="p-4 sm:p-8">
+    <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Usuários</h1>
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <h1 className="text-3xl font-bold">Gerenciar Usuários</h1>
+        <Button onClick={() => setNovoUsuarioOpen(true)}>
           Novo Usuário
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg shadow overflow-hidden">
-        <ScrollArea className="w-full">
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-xs sm:text-sm">
-              <thead className="bg-muted">
-                <tr className="border-b border-border">
-                  <th className="px-2 py-2 text-left font-medium text-muted-foreground">Nome</th>
-                  <th className="px-2 py-2 text-left font-medium text-muted-foreground">Email</th>
-                  <th className="px-2 py-2 text-left font-medium text-muted-foreground hidden md:table-cell">Igrejas</th>
-                  <th className="px-2 py-2 text-left font-medium text-muted-foreground hidden md:table-cell">Cargos</th>
-                  <th className="px-2 py-2 text-left font-medium text-muted-foreground">Tipo</th>
-                  <th className="px-2 py-2 text-right font-medium text-muted-foreground">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usuarios.map((usuario) => (
-                  <tr key={usuario.id} className="border-b border-border">
-                    <td className="px-2 py-2 text-sm truncate max-w-[120px] text-foreground">{usuario.nome}</td>
-                    <td className="px-2 py-2 text-sm truncate max-w-[120px] text-foreground">{usuario.email}</td>
-                    <td className="px-2 py-2 text-sm truncate max-w-[120px] hidden md:table-cell text-foreground">{usuario.igrejas.map(id => getNomeIgreja(id)).join(', ')}</td>
-                    <td className="px-2 py-2 text-sm truncate max-w-[120px] hidden md:table-cell text-foreground">{usuario.cargos.map(id => getNomeCargo(id)).join(', ')}</td>
-                    <td className="px-2 py-2 text-sm text-foreground">{usuario.isAdmin ? 'Administrador' : 'Usuário'}</td>
-                    <td className="px-2 py-2 text-sm text-right">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(usuario)}
-                              className="mr-2"
-                            >
-                              <PencilIcon className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Editar usuário</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(usuario)}
-                              className="text-destructive hover:text-destructive hover:bg-muted"
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Excluir usuário</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ScrollArea>
-
-        <NovoUsuarioDialog
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          onUsuarioCriado={carregarDados}
-        />
-
-        <EditarUsuarioDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          onUsuarioAtualizado={carregarDados}
-          usuario={usuarioSelecionado}
-        />
-
-        <ExcluirUsuarioDialog
-          open={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
-          onConfirm={handleConfirmDelete}
-          loading={loading}
-        />
+      <div className="grid gap-4">
+        {usuarios.map((usuario) => (
+          <Card key={usuario.id}>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>{usuario.nome}</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditarUsuario(usuario)}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setExcluirUsuario(usuario)}
+                  >
+                    Excluir
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Email:</span>
+                  <div className="text-muted-foreground">{usuario.email}</div>
+                </div>
+                <div>
+                  <span className="font-medium">Igreja:</span>
+                  <div className="text-muted-foreground">{usuario.igreja}</div>
+                </div>
+                <div>
+                  <span className="font-medium">Cargo:</span>
+                  <div className="text-muted-foreground">{usuario.cargo}</div>
+                </div>
+                <div>
+                  <span className="font-medium">Administrador:</span>
+                  <div className="text-muted-foreground">
+                    {usuario.isAdmin ? 'Sim' : 'Não'}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
+      <NovoUsuarioDialog
+        open={novoUsuarioOpen}
+        onOpenChange={setNovoUsuarioOpen}
+        onUsuarioCriado={carregarUsuarios}
+      />
+
+      {editarUsuario && (
+        <EditarUsuarioDialog
+          usuario={editarUsuario}
+          open={!!editarUsuario}
+          onOpenChange={(open: boolean) => !open && setEditarUsuario(null)}
+          onUsuarioAtualizado={carregarUsuarios}
+        />
+      )}
+
+      {excluirUsuario && (
+        <ExcluirUsuarioDialog
+          usuario={excluirUsuario}
+          open={!!excluirUsuario}
+          onOpenChange={(open: boolean) => !open && setExcluirUsuario(null)}
+          onConfirmar={() => handleExcluirUsuario(excluirUsuario.id)}
+        />
+      )}
     </div>
   );
 } 
