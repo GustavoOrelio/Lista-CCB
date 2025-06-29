@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Users, Calendar, Church, Briefcase } from "lucide-react";
-import { voluntarioService } from '@/app/services/voluntarioService';
-import { EscalaService } from '@/app/services/escalaService';
-import { igrejaService } from '@/app/services/igrejaService';
-import { cargoService } from '@/app/services/cargoService';
+import { voluntarioService } from '@/app/services/client/voluntarioService';
+import { igrejaService } from '@/app/services/client/igrejaService';
+import { cargoService } from '@/app/services/client/cargoService';
 
 interface DashboardStats {
   totalVoluntarios: number;
@@ -41,36 +40,12 @@ export function DashboardStats() {
         // Buscar total de cargos
         const cargos = await cargoService.listar();
 
-        // Buscar escalas do mês atual
-        const dataAtual = new Date();
-        const escalas = await EscalaService.getEscalaDoMes(
-          dataAtual.getMonth(),
-          dataAtual.getFullYear(),
-          '', // igrejaId vazio para buscar todas
-          '' // cargoId vazio para buscar todos
-        );
-
-        // Filtrar escalas futuras
-        const escalasFuturas = escalas.filter(escala =>
-          new Date(escala.data) >= dataAtual
-        );
-
-        // Ordenar próximos eventos
-        const proximosEventos = escalasFuturas
-          .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
-          .slice(0, 5)
-          .map(escala => ({
-            id: escala.data.toString(),
-            data: new Date(escala.data).toLocaleDateString('pt-BR'),
-            descricao: `${escala.tipoCulto} - ${escala.voluntarios.map(v => v.nome).join(', ')}`
-          }));
-
         setStats({
           totalVoluntarios: voluntarios.length,
-          totalEscalas: escalasFuturas.length,
+          totalEscalas: 0, // Temporariamente desabilitado
           totalIgrejas: igrejas.length,
           totalCargos: cargos.length,
-          proximosEventos
+          proximosEventos: [] // Temporariamente desabilitado
         });
       } catch (error) {
         console.error('Erro ao buscar estatísticas:', error);

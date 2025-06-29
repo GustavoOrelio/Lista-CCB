@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/app/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, PieChart, Pie, Cell } from "recharts";
-import { voluntarioService } from '@/app/services/voluntarioService';
-import { igrejaService } from '@/app/services/igrejaService';
-import { cargoService } from '@/app/services/cargoService';
+import { voluntarioService } from '@/app/services/client/voluntarioService';
+import { igrejaService } from '@/app/services/client/igrejaService';
+import { cargoService } from '@/app/services/client/cargoService';
 
 const PIE_COLORS = ["#64748b", "#cbd5e1", "#94a3b8", "#e5e7eb", "#a3a3a3"];
 
