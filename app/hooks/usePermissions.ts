@@ -1,18 +1,18 @@
 import { useAuth } from "../contexts/AuthContext";
 
 export function usePermissions() {
-  const { userData } = useAuth();
+  const { user } = useAuth();
 
-  const isAdmin = userData?.isAdmin ?? false;
+  const isAdmin = user?.isAdmin ?? false;
 
   const canAccessIgreja = (igrejaId: string) => {
     if (isAdmin) return true;
-    return userData?.igreja === igrejaId;
+    return user?.igreja === igrejaId;
   };
 
   const canAccessCargo = (cargoId: string) => {
     if (isAdmin) return true;
-    return userData?.cargo === cargoId;
+    return user?.cargo === cargoId;
   };
 
   const canManageUsers = () => {

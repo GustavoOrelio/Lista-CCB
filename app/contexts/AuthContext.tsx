@@ -1,18 +1,10 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import {
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  User,
-  sendPasswordResetEmail
-} from 'firebase/auth';
-import { auth, db } from '../config/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 interface UserData {
-  uid: string;
+  id: string;
   nome: string;
   email: string;
   igreja: string;
@@ -21,8 +13,7 @@ interface UserData {
 }
 
 interface AuthContextType {
-  user: User | null;
-  userData: UserData | null;
+  user: UserData | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -36,50 +27,66 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  async function fetchUserData(uid: string) {
+  // Verificar token ao carregar a aplicação
+  useEffect(() => {
+    const token = localStorage.getItem('auth-token');
+    if (token) {
+      fetchUserData(token);
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  async function fetchUserData(token: string) {
     try {
-      // Buscar o documento do usuário usando uma query pelo uid
-      const usuariosRef = collection(db, 'usuarios');
-      const q = query(usuariosRef, where('uid', '==', uid));
-      const querySnapshot = await getDocs(q);
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-      if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        setUserData(userDoc.data() as UserData);
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
       } else {
-        console.error('Dados do usuário não encontrados');
-        setUserData(null);
+        // Token inválido, remover do localStorage
+        localStorage.removeItem('auth-token');
+        setUser(null);
       }
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
-      setUserData(null);
+      localStorage.removeItem('auth-token');
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   }
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-
-      if (user) {
-        await fetchUserData(user.uid);
-      } else {
-        setUserData(null);
-      }
-
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
   async function login(email: string, password: string) {
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      await fetchUserData(result.user.uid);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro no login');
+      }
+
+      const { token, user: userData } = await response.json();
+
+      // Salvar token no localStorage
+      localStorage.setItem('auth-token', token);
+      setUser(userData);
+
     } catch (error) {
       console.error('Erro no login:', error);
       throw error;
@@ -88,8 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     try {
-      await signOut(auth);
-      setUserData(null);
+      localStorage.removeItem('auth-token');
+      setUser(null);
+      router.push('/login');
     } catch (error) {
       console.error('Erro no logout:', error);
       throw error;
@@ -98,11 +106,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function resetPassword(email: string) {
     try {
-      const actionCodeSettings = {
-        url: window.location.origin + '/login', // Redireciona de volta para a página de login
-        handleCodeInApp: false
-      };
-      await sendPasswordResetEmail(auth, email, actionCodeSettings);
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao enviar email de recuperação');
+      }
     } catch (error) {
       console.error('Erro ao enviar email de recuperação:', error);
       throw error;
@@ -111,7 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = {
     user,
-    userData,
     loading,
     login,
     logout,
