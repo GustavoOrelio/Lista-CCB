@@ -1,9 +1,9 @@
 import * as XLSX from "xlsx";
 import { EscalaItem } from "../types/escala";
-import { voluntarioService } from "./voluntarioService";
-import { jsPDF } from "jspdf";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { RowInput } from "jspdf-autotable";
+import { voluntarioService } from "./client/voluntarioService";
 
 // Estende o tipo jsPDF para incluir autoTable
 declare module "jspdf" {

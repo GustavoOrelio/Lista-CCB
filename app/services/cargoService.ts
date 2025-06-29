@@ -1,42 +1,54 @@
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  doc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
-import { db } from "../firebase/config";
+import { prisma } from "../lib/prisma";
 import { Cargo } from "../types/cargo";
-
-const COLECAO = "cargos";
 
 export const cargoService = {
   async listar(): Promise<Cargo[]> {
-    const cargosRef = collection(db, COLECAO);
-    const q = query(cargosRef, orderBy("nome"));
-    const snapshot = await getDocs(q);
+    const cargos = await prisma.cargo.findMany({
+      where: {
+        ativo: true,
+      },
+      orderBy: {
+        nome: "asc",
+      },
+    });
 
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Cargo[];
+    return cargos.map((cargo) => ({
+      id: cargo.id,
+      nome: cargo.nome,
+      descricao: cargo.descricao,
+      ativo: cargo.ativo,
+    }));
   },
 
   async adicionar(cargo: Omit<Cargo, "id">): Promise<string> {
-    const docRef = await addDoc(collection(db, COLECAO), cargo);
-    return docRef.id;
+    const novoCargo = await prisma.cargo.create({
+      data: {
+        nome: cargo.nome,
+        descricao: cargo.descricao,
+        ativo: cargo.ativo,
+      },
+    });
+
+    return novoCargo.id;
   },
 
   async atualizar(id: string, cargo: Omit<Cargo, "id">): Promise<void> {
-    const docRef = doc(db, COLECAO, id);
-    await updateDoc(docRef, cargo);
+    await prisma.cargo.update({
+      where: { id },
+      data: {
+        nome: cargo.nome,
+        descricao: cargo.descricao,
+        ativo: cargo.ativo,
+      },
+    });
   },
 
   async excluir(id: string): Promise<void> {
-    const docRef = doc(db, COLECAO, id);
-    await deleteDoc(docRef);
+    await prisma.cargo.update({
+      where: { id },
+      data: {
+        ativo: false,
+      },
+    });
   },
 };

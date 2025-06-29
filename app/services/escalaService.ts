@@ -1,17 +1,4 @@
-import { db } from "@/app/firebase/firebase";
-import {
-  collection,
-  doc,
-  writeBatch,
-  Timestamp,
-  increment,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  getDoc,
-  deleteDoc,
-} from "firebase/firestore";
+import { prisma } from "@/app/lib/prisma";
 
 interface Voluntario {
   id: string;
@@ -43,19 +30,6 @@ interface EscalaItem {
   tipoCulto: string;
 }
 
-interface IgrejaFirebase {
-  id: string;
-  nome: string;
-  cultoDomingoRDJ: boolean;
-  cultoDomingo: boolean;
-  cultoSegunda: boolean;
-  cultoTerca: boolean;
-  cultoQuarta: boolean;
-  cultoQuinta: boolean;
-  cultoSexta: boolean;
-  cultoSabado: boolean;
-}
-
 interface Igreja {
   id: string;
   nome: string;
@@ -75,88 +49,52 @@ interface Cargo {
   nome: string;
 }
 
-interface EscalaMensal {
-  mes: number;
-  ano: number;
-  igrejaId: string;
-  cargoId: string;
-  criadoEm: Timestamp;
-  dias: {
-    data: Timestamp;
-    tipoCulto: string;
-    voluntarios: {
-      id: string;
-      nome: string;
-    }[];
-  }[];
-}
-
 export class EscalaService {
-  private static convertFirebaseToIgreja(
-    id: string,
-    data: Partial<IgrejaFirebase>
-  ): Igreja {
+  private static convertPrismaToIgreja(igrejaData: any): Igreja {
     const diasCulto: string[] = [];
 
-    if (data.cultoDomingoRDJ) diasCulto.push("domingoRDJ");
-    if (data.cultoDomingo) diasCulto.push("domingo");
-    if (data.cultoSegunda) diasCulto.push("segunda");
-    if (data.cultoTerca) diasCulto.push("terca");
-    if (data.cultoQuarta) diasCulto.push("quarta");
-    if (data.cultoQuinta) diasCulto.push("quinta");
-    if (data.cultoSexta) diasCulto.push("sexta");
-    if (data.cultoSabado) diasCulto.push("sabado");
+    if (igrejaData.cultoDomingoRDJ) diasCulto.push("domingoRDJ");
+    if (igrejaData.cultoDomingo) diasCulto.push("domingo");
+    if (igrejaData.cultoSegunda) diasCulto.push("segunda");
+    if (igrejaData.cultoTerca) diasCulto.push("terca");
+    if (igrejaData.cultoQuarta) diasCulto.push("quarta");
+    if (igrejaData.cultoQuinta) diasCulto.push("quinta");
+    if (igrejaData.cultoSexta) diasCulto.push("sexta");
+    if (igrejaData.cultoSabado) diasCulto.push("sabado");
 
     return {
-      id,
-      nome: data.nome || "",
+      id: igrejaData.id,
+      nome: igrejaData.nome,
       diasCulto,
-      cultoDomingoRDJ: data.cultoDomingoRDJ || false,
-      cultoDomingo: data.cultoDomingo || false,
-      cultoSegunda: data.cultoSegunda || false,
-      cultoTerca: data.cultoTerca || false,
-      cultoQuarta: data.cultoQuarta || false,
-      cultoQuinta: data.cultoQuinta || false,
-      cultoSexta: data.cultoSexta || false,
-    };
-  }
-
-  private static convertDiasCultoToFirebase(
-    diasCulto: string[]
-  ): Partial<IgrejaFirebase> {
-    return {
-      cultoDomingoRDJ: diasCulto.includes("domingoRDJ"),
-      cultoDomingo: diasCulto.includes("domingo"),
-      cultoSegunda: diasCulto.includes("segunda"),
-      cultoTerca: diasCulto.includes("terca"),
-      cultoQuarta: diasCulto.includes("quarta"),
-      cultoQuinta: diasCulto.includes("quinta"),
-      cultoSexta: diasCulto.includes("sexta"),
-      cultoSabado: diasCulto.includes("sabado"),
+      cultoDomingoRDJ: igrejaData.cultoDomingoRDJ,
+      cultoDomingo: igrejaData.cultoDomingo,
+      cultoSegunda: igrejaData.cultoSegunda,
+      cultoTerca: igrejaData.cultoTerca,
+      cultoQuarta: igrejaData.cultoQuarta,
+      cultoQuinta: igrejaData.cultoQuinta,
+      cultoSexta: igrejaData.cultoSexta,
+      cultoSabado: igrejaData.cultoSabado,
     };
   }
 
   static async getIgrejas(): Promise<Igreja[]> {
-    const igrejasRef = collection(db, "igrejas");
-    const snapshot = await getDocs(igrejasRef);
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return this.convertFirebaseToIgreja(doc.id, data);
+    const igrejas = await prisma.igreja.findMany({
+      orderBy: { nome: "asc" },
     });
+
+    return igrejas.map((igreja) => this.convertPrismaToIgreja(igreja));
   }
 
   static async getCargos(): Promise<Cargo[]> {
-    const cargosRef = collection(db, "cargos");
-    const snapshot = await getDocs(cargosRef);
+    const cargos = await prisma.cargo.findMany({
+      where: { ativo: true },
+      orderBy: { nome: "asc" },
+    });
 
-    return snapshot.docs.map(
-      (doc) =>
-        ({
-          id: doc.id,
-          ...doc.data(),
-        } as Cargo)
-    );
+    return cargos.map((cargo) => ({
+      id: cargo.id,
+      nome: cargo.nome,
+    }));
   }
 
   static async getVoluntariosDisponiveis(
@@ -164,36 +102,39 @@ export class EscalaService {
     igrejaId: string,
     cargoId: string
   ): Promise<Voluntario[]> {
-    const voluntariosRef = collection(db, "voluntarios");
-    const q = query(
-      voluntariosRef,
-      where("igrejaId", "==", igrejaId),
-      where("cargoId", "==", cargoId)
-    );
+    // Construir a condição de disponibilidade dinamicamente
+    const whereClause: any = {
+      igrejaId,
+      cargoId,
+    };
 
-    const querySnapshot = await getDocs(q);
-    const voluntarios: Voluntario[] = [];
+    // Adicionar a condição específica do dia
+    const diaKey = diaSemana === "domingoRDJ" ? "domingoRDJ" : diaSemana;
+    whereClause[diaKey] = true;
 
-    for (const doc of querySnapshot.docs) {
-      const data = doc.data();
-      const disponibilidades = data.disponibilidades || {};
+    const voluntarios = await prisma.voluntario.findMany({
+      where: whereClause,
+      orderBy: { nome: "asc" },
+    });
 
-      // Verifica se o voluntário está disponível para o dia específico
-      const diaKey = diaSemana === "domingoRDJ" ? "domingoRDJ" : diaSemana;
-      if (disponibilidades[diaKey]) {
-        voluntarios.push({
-          id: doc.id,
-          nome: data.nome,
-          disponibilidades,
-          diasTrabalhados: data.diasTrabalhados || 0,
-          ultimaEscala: data.ultimaEscala ? data.ultimaEscala.toDate() : null,
-          cargoId: data.cargoId,
-          igrejaId: data.igrejaId,
-        });
-      }
-    }
-
-    return voluntarios;
+    return voluntarios.map((voluntario) => ({
+      id: voluntario.id,
+      nome: voluntario.nome,
+      disponibilidades: {
+        domingoRDJ: voluntario.domingoRDJ,
+        domingo: voluntario.domingo,
+        segunda: voluntario.segunda,
+        terca: voluntario.terca,
+        quarta: voluntario.quarta,
+        quinta: voluntario.quinta,
+        sexta: voluntario.sexta,
+        sabado: voluntario.sabado,
+      },
+      diasTrabalhados: 0, // TODO: Implementar contagem baseada nas escalas
+      ultimaEscala: null, // TODO: Implementar busca da última escala
+      cargoId: voluntario.cargoId,
+      igrejaId: voluntario.igrejaId,
+    }));
   }
 
   private static getDiaDaSemana(data: Date): string {
@@ -212,64 +153,44 @@ export class EscalaService {
   private static async salvarEscala(escala: EscalaItem[]) {
     if (escala.length === 0) return;
 
-    const escalaRef = collection(db, "escalas");
-    const batch = writeBatch(db);
+    // Usar uma transação para garantir atomicidade
+    await prisma.$transaction(async (tx) => {
+      // Agrupar escalas por mês para otimização
+      const escalasPorDia = new Map<string, EscalaItem[]>();
 
-    // Agrupa as escalas por mês
-    const escalasPorMes = escala.reduce<Record<string, EscalaMensal>>(
-      (acc, item) => {
-        const mes = item.data.getMonth();
-        const ano = item.data.getFullYear();
-        const chave = `${ano}-${mes}`;
-
-        if (!acc[chave]) {
-          acc[chave] = {
-            mes,
-            ano,
-            igrejaId: item.igrejaId,
-            cargoId: item.cargoId,
-            criadoEm: Timestamp.fromDate(new Date()),
-            dias: [],
-          };
+      escala.forEach((item) => {
+        const dataKey = item.data.toISOString().split("T")[0];
+        if (!escalasPorDia.has(dataKey)) {
+          escalasPorDia.set(dataKey, []);
         }
-
-        acc[chave].dias.push({
-          data: Timestamp.fromDate(item.data),
-          tipoCulto: item.tipoCulto,
-          voluntarios: item.voluntarios,
-        });
-
-        return acc;
-      },
-      {}
-    );
-
-    // Salva cada mês como um documento separado
-    for (const escalaMensal of Object.values(escalasPorMes)) {
-      const docRef = doc(
-        escalaRef,
-        `${escalaMensal.igrejaId}-${escalaMensal.cargoId}-${escalaMensal.ano}-${escalaMensal.mes}`
-      );
-      batch.set(docRef, escalaMensal);
-
-      // Atualiza as estatísticas dos voluntários
-      const voluntariosProcessados = new Set<string>();
-
-      escalaMensal.dias.forEach((dia) => {
-        dia.voluntarios.forEach((voluntario) => {
-          if (!voluntariosProcessados.has(voluntario.id)) {
-            const voluntarioRef = doc(db, "voluntarios", voluntario.id);
-            batch.update(voluntarioRef, {
-              diasTrabalhados: increment(1),
-              ultimaEscala: dia.data,
-            });
-            voluntariosProcessados.add(voluntario.id);
-          }
-        });
+        escalasPorDia.get(dataKey)!.push(item);
       });
-    }
 
-    await batch.commit();
+      // Salvar cada escala como um item individual
+      for (const [, itensEscala] of escalasPorDia) {
+        for (const item of itensEscala) {
+          // Criar o item da escala
+          const escalaItem = await tx.escalaItem.create({
+            data: {
+              data: item.data,
+              igrejaId: item.igrejaId,
+              cargoId: item.cargoId,
+              tipoCulto: item.tipoCulto,
+            },
+          });
+
+          // Criar os relacionamentos com voluntários
+          for (const voluntario of item.voluntarios) {
+            await tx.voluntarioEscala.create({
+              data: {
+                voluntarioId: voluntario.id,
+                escalaItemId: escalaItem.id,
+              },
+            });
+          }
+        }
+      }
+    });
   }
 
   private static async deletarEscalaExistente(
@@ -278,14 +199,35 @@ export class EscalaService {
     igrejaId: string,
     cargoId: string
   ) {
-    const escalaRef = collection(db, "escalas");
-    const docId = `${igrejaId}-${cargoId}-${ano}-${mes}`;
-    const docRef = doc(escalaRef, docId);
+    // Calcular o início e fim do mês
+    const inicioMes = new Date(ano, mes, 1);
+    const fimMes = new Date(ano, mes + 1, 0, 23, 59, 59);
 
     try {
-      await deleteDoc(docRef);
-    } catch {
-      console.log("Nenhuma escala anterior encontrada para deletar");
+      // Buscar escalas do mês
+      const escalasExistentes = await prisma.escalaItem.findMany({
+        where: {
+          igrejaId,
+          cargoId,
+          data: {
+            gte: inicioMes,
+            lte: fimMes,
+          },
+        },
+      });
+
+      // Deletar relacionamentos e escalas
+      for (const escala of escalasExistentes) {
+        await prisma.voluntarioEscala.deleteMany({
+          where: { escalaItemId: escala.id },
+        });
+
+        await prisma.escalaItem.delete({
+          where: { id: escala.id },
+        });
+      }
+    } catch (error) {
+      console.log("Erro ao deletar escala existente:", error);
     }
   }
 
@@ -468,61 +410,72 @@ export class EscalaService {
     igrejaId: string,
     cargoId: string
   ): Promise<EscalaItem[]> {
-    const escalaRef = collection(db, "escalas");
-    const docId = `${igrejaId}-${cargoId}-${ano}-${mes}`;
-    const docRef = doc(escalaRef, docId);
+    // Calcular o início e fim do mês
+    const inicioMes = new Date(ano, mes, 1);
+    const fimMes = new Date(ano, mes + 1, 0, 23, 59, 59);
 
-    const docSnap = await getDoc(docRef);
+    const escalas = await prisma.escalaItem.findMany({
+      where: {
+        igrejaId,
+        cargoId,
+        data: {
+          gte: inicioMes,
+          lte: fimMes,
+        },
+      },
+      include: {
+        voluntarios: {
+          include: {
+            voluntario: true,
+          },
+        },
+      },
+      orderBy: {
+        data: "asc",
+      },
+    });
 
-    if (!docSnap.exists()) {
-      return [];
-    }
-
-    const data = docSnap.data() as EscalaMensal;
-
-    return data.dias
-      .map((dia) => ({
-        data: dia.data.toDate(),
-        voluntarios: dia.voluntarios,
-        igrejaId: data.igrejaId,
-        cargoId: data.cargoId,
-        tipoCulto: dia.tipoCulto,
-      }))
-      .sort(
-        (a: EscalaItem, b: EscalaItem) => a.data.getTime() - b.data.getTime()
-      );
+    return escalas.map((escala) => ({
+      data: escala.data,
+      voluntarios: escala.voluntarios.map((v) => ({
+        id: v.voluntario.id,
+        nome: v.voluntario.nome,
+      })),
+      igrejaId: escala.igrejaId,
+      cargoId: escala.cargoId,
+      tipoCulto: escala.tipoCulto,
+    }));
   }
 
   static async atualizarDiasCultoIgreja(
     igrejaId: string,
     diasCulto: string[]
   ): Promise<void> {
-    const igrejaRef = doc(db, "igrejas", igrejaId);
-    const dadosAtualizados = this.convertDiasCultoToFirebase(diasCulto);
+    const dadosAtualizacao = {
+      cultoDomingoRDJ: diasCulto.includes("domingoRDJ"),
+      cultoDomingo: diasCulto.includes("domingo"),
+      cultoSegunda: diasCulto.includes("segunda"),
+      cultoTerca: diasCulto.includes("terca"),
+      cultoQuarta: diasCulto.includes("quarta"),
+      cultoQuinta: diasCulto.includes("quinta"),
+      cultoSexta: diasCulto.includes("sexta"),
+      cultoSabado: diasCulto.includes("sabado"),
+    };
 
-    await updateDoc(igrejaRef, dadosAtualizados);
+    await prisma.igreja.update({
+      where: { id: igrejaId },
+      data: dadosAtualizacao,
+    });
   }
 
   // Método auxiliar para buscar igreja por ID
   private static async getIgrejaById(id: string): Promise<Igreja | null> {
-    const igrejaRef = doc(db, "igrejas", id);
-    const igrejaDoc = await getDoc(igrejaRef);
+    const igreja = await prisma.igreja.findUnique({
+      where: { id },
+    });
 
-    if (!igrejaDoc.exists()) return null;
+    if (!igreja) return null;
 
-    const data = igrejaDoc.data();
-    return {
-      id: igrejaDoc.id,
-      nome: data.nome,
-      diasCulto: data.diasCulto || [],
-      cultoDomingoRDJ: data.cultoDomingoRDJ || false,
-      cultoDomingo: data.cultoDomingo || false,
-      cultoSegunda: data.cultoSegunda || false,
-      cultoTerca: data.cultoTerca || false,
-      cultoQuarta: data.cultoQuarta || false,
-      cultoQuinta: data.cultoQuinta || false,
-      cultoSexta: data.cultoSexta || false,
-      cultoSabado: data.cultoSabado || false,
-    };
+    return this.convertPrismaToIgreja(igreja);
   }
 }
