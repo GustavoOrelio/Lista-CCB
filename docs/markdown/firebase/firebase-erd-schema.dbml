@@ -1,0 +1,180 @@
+// Firebase Schema ERD - Sistema de Gestão de Voluntários
+// Criado com base na documentação do schema Firebase
+// Ferramenta: dbdiagram.io
+
+Project firebase_voluntarios {
+  database_type: 'Firebase Firestore'
+  Note: 'Sistema de gestão de voluntários e escalas para igrejas'
+}
+
+// ========================================
+// ENTIDADES PRINCIPAIS
+// ========================================
+
+Table usuarios {
+  uid varchar [pk, unique, note: 'Firebase Auth UID (document ID)']
+  nome varchar [not null, note: 'Nome completo do usuário']
+  email varchar [not null, unique, note: 'Email único do usuário']
+  isAdmin boolean [not null, default: false, note: 'Indica se é administrador']
+  created_at timestamp [default: `now()`, note: 'Data de criação']
+  
+  Note: 'Usuários do sistema (administradores e usuários regulares)'
+}
+
+Table igrejas {
+  id varchar [pk, unique, note: 'ID único da igreja (document ID)']
+  nome varchar [not null, note: 'Nome da igreja']
+  cultoDomingoRDJ boolean [not null, default: false, note: 'Culto domingo RDJ']
+  cultoDomingo boolean [not null, default: false, note: 'Culto domingo regular']
+  cultoSegunda boolean [not null, default: false, note: 'Culto segunda-feira']
+  cultoTerca boolean [not null, default: false, note: 'Culto terça-feira']
+  cultoQuarta boolean [not null, default: false, note: 'Culto quarta-feira']
+  cultoQuinta boolean [not null, default: false, note: 'Culto quinta-feira']
+  cultoSexta boolean [not null, default: false, note: 'Culto sexta-feira']
+  cultoSabado boolean [not null, default: false, note: 'Culto sábado']
+  created_at timestamp [default: `now()`, note: 'Data de criação']
+  
+  Note: 'Igrejas e seus horários de culto'
+}
+
+Table cargos {
+  id varchar [pk, unique, note: 'ID único do cargo (document ID)']
+  nome varchar [not null, note: 'Nome do cargo']
+  descricao text [not null, note: 'Descrição detalhada do cargo']
+  ativo boolean [not null, default: true, note: 'Indica se o cargo está ativo']
+  created_at timestamp [default: `now()`, note: 'Data de criação']
+  
+  Note: 'Tipos de cargo/função que voluntários exercem'
+}
+
+Table voluntarios {
+  id varchar [pk, unique, note: 'ID único do voluntário (document ID)']
+  nome varchar [not null, note: 'Nome completo do voluntário']
+  telefone varchar [not null, note: 'Telefone formatado (11) 99999-9999']
+  igrejaId varchar [not null, ref: > igrejas.id, note: 'FK: Igreja do voluntário']
+  igrejaNome varchar [not null, note: 'Nome da igreja (desnormalizado)']
+  cargoId varchar [not null, ref: > cargos.id, note: 'FK: Cargo do voluntário']
+  cargoNome varchar [not null, note: 'Nome do cargo (desnormalizado)']
+  diasTrabalhados integer [default: 0, note: 'Contador de dias trabalhados']
+  ultimaEscala timestamp [note: 'Data da última escala']
+  created_at timestamp [default: `now()`, note: 'Data de criação']
+  
+  Note: 'Voluntários e suas informações básicas'
+}
+
+Table disponibilidades {
+  id varchar [pk, unique, note: 'ID único da disponibilidade']
+  voluntarioId varchar [not null, ref: > voluntarios.id, note: 'FK: Voluntário']
+  domingoRDJ boolean [not null, default: false, note: 'Disponível domingo RDJ']
+  domingo boolean [not null, default: false, note: 'Disponível domingo']
+  segunda boolean [not null, default: false, note: 'Disponível segunda-feira']
+  terca boolean [not null, default: false, note: 'Disponível terça-feira']
+  quarta boolean [not null, default: false, note: 'Disponível quarta-feira']
+  quinta boolean [not null, default: false, note: 'Disponível quinta-feira']
+  sexta boolean [not null, default: false, note: 'Disponível sexta-feira']
+  sabado boolean [not null, default: false, note: 'Disponível sábado']
+  
+  Note: 'Disponibilidades dos voluntários por dia da semana'
+}
+
+Table escalas {
+  id varchar [pk, unique, note: 'ID único da escala (document ID)']
+  mes integer [not null, note: 'Mês da escala (1-12)']
+  ano integer [not null, note: 'Ano da escala']
+  igrejaId varchar [not null, ref: > igrejas.id, note: 'FK: Igreja da escala']
+  cargoId varchar [not null, ref: > cargos.id, note: 'FK: Cargo da escala']
+  criadoEm timestamp [not null, default: `now()`, note: 'Data/hora de criação']
+  
+  Note: 'Escalas mensais por igreja e cargo'
+  
+  indexes {
+    (mes, ano, igrejaId, cargoId) [unique, name: 'idx_escala_unica']
+    (igrejaId, cargoId) [name: 'idx_escala_igreja_cargo']
+  }
+}
+
+Table escala_dias {
+  id varchar [pk, unique, note: 'ID único do dia de escala']
+  escalaId varchar [not null, ref: > escalas.id, note: 'FK: Escala']
+  data timestamp [not null, note: 'Data específica do dia']
+  tipoCulto varchar [not null, note: 'Tipo de culto: domingo, segunda, etc.']
+  
+  Note: 'Dias específicos dentro de uma escala mensal'
+  
+  indexes {
+    (escalaId, data) [unique, name: 'idx_escala_dia_unico']
+  }
+}
+
+Table escala_voluntarios {
+  id varchar [pk, unique, note: 'ID único da escalação']
+  escalaDiaId varchar [not null, ref: > escala_dias.id, note: 'FK: Dia da escala']
+  voluntarioId varchar [not null, ref: > voluntarios.id, note: 'FK: Voluntário']
+  voluntarioNome varchar [not null, note: 'Nome do voluntário (desnormalizado)']
+  
+  Note: 'Voluntários escalados para dias específicos'
+  
+  indexes {
+    (escalaDiaId, voluntarioId) [unique, name: 'idx_escala_voluntario_unico']
+  }
+}
+
+// ========================================
+// TABELAS DE RELACIONAMENTO M:N
+// ========================================
+
+Table usuario_igrejas {
+  id varchar [pk, unique, note: 'ID único do relacionamento']
+  usuarioId varchar [not null, ref: > usuarios.uid, note: 'FK: Usuário']
+  igrejaId varchar [not null, ref: > igrejas.id, note: 'FK: Igreja']
+  
+  Note: 'Relacionamento M:N - Usuários e Igrejas que podem gerenciar'
+  
+  indexes {
+    (usuarioId, igrejaId) [unique, name: 'idx_usuario_igreja_unico']
+  }
+}
+
+Table usuario_cargos {
+  id varchar [pk, unique, note: 'ID único do relacionamento']
+  usuarioId varchar [not null, ref: > usuarios.uid, note: 'FK: Usuário']  
+  cargoId varchar [not null, ref: > cargos.id, note: 'FK: Cargo']
+  
+  Note: 'Relacionamento M:N - Usuários e Cargos que podem gerenciar'
+  
+  indexes {
+    (usuarioId, cargoId) [unique, name: 'idx_usuario_cargo_unico']
+  }
+}
+
+// ========================================
+// ENUMS E TIPOS ESPECIAIS
+// ========================================
+
+Enum tipo_culto {
+  domingoRDJ [note: 'Domingo RDJ']
+  domingo [note: 'Domingo regular']
+  segunda [note: 'Segunda-feira']
+  terca [note: 'Terça-feira']
+  quarta [note: 'Quarta-feira']
+  quinta [note: 'Quinta-feira']
+  sexta [note: 'Sexta-feira']
+  sabado [note: 'Sábado']
+}
+
+// ========================================
+// RELACIONAMENTOS PRINCIPAIS
+// ========================================
+
+// Ref: usuarios.uid < usuario_igrejas.usuarioId
+// Ref: igrejas.id < usuario_igrejas.igrejaId
+// Ref: usuarios.uid < usuario_cargos.usuarioId
+// Ref: cargos.id < usuario_cargos.cargoId
+// Ref: igrejas.id < voluntarios.igrejaId
+// Ref: cargos.id < voluntarios.cargoId
+// Ref: voluntarios.id < disponibilidades.voluntarioId
+// Ref: igrejas.id < escalas.igrejaId
+// Ref: cargos.id < escalas.cargoId
+// Ref: escalas.id < escala_dias.escalaId
+// Ref: escala_dias.id < escala_voluntarios.escalaDiaId
+// Ref: voluntarios.id < escala_voluntarios.voluntarioId 
